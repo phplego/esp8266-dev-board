@@ -201,13 +201,13 @@ void tempLoop(long now) {
 
     const int JSON_SIZE = 200;
 
-    if ( now - lastTempMeasTime > tempMeasInterval ) { //Take a measurement at a fixed time (tempMeasInterval = 1000ms, 1s)
+    if ( now - lastTempMeasTime > tempMeasInterval ) { // Take a measurement at a fixed time (tempMeasInterval = 1000ms, 1s)
         StaticJsonBuffer<JSON_SIZE> jsonBuffer;
         JsonObject& root = jsonBuffer.createObject();
         JsonObject& temperatures = root.createNestedObject("temperatures");
 
         for (int i = 0; i < numberOfDevices; i++) {
-            tempDev[i] = DS18B20.getTempC( devAddr[i] ); //Measuring temperature in Celsius and save the measured value to the array
+            tempDev[i] = DS18B20.getTempC( devAddr[i] ); // Measuring temperature in Celsius and save the measured value to the array
             temperatures[getAddressToString(devAddr[i])] = tempDev[i];
         }
 
@@ -370,27 +370,27 @@ void onAPStarted(WiFiManager * manager){
 }
 
 
-bool HandleFileRead(String path) { // send the right file to the client (if it exists)
+bool HandleFileRead(String path) {                              // send the right file to the client (if it exists)
     Serial.println("handleFileRead: " + path);
-    if (path.endsWith("/")) path += "index.html";          // If a folder is requested, send the index file
-    String contentType = getContentType(path);             // Get the MIME type
+    if (path.endsWith("/")) path += "index.html";               // If a folder is requested, send the index file
+    String contentType = getContentType(path);                  // Get the MIME type
     String pathWithGz = path + ".gz";
-    if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) { // If the file exists, either as a compressed archive, or normal
+    if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) {     // If the file exists, either as a compressed archive, or normal
         Serial.println(String("\tFile exists: ") + path);
-        if (SPIFFS.exists(pathWithGz))                         // If there's a compressed version available
-            path += ".gz";                                         // Use the compressed verion
-        File file = SPIFFS.open(path, "r");                    // Open the file
-        size_t sent = server.streamFile(file, contentType);    // Send it to the client
-        file.close();                                          // Close the file again
+        if (SPIFFS.exists(pathWithGz))                          // If there's a compressed version available
+            path += ".gz";                                      // Use the compressed verion
+        File file = SPIFFS.open(path, "r");                     // Open the file
+        size_t sent = server.streamFile(file, contentType);     // Send it to the client
+        file.close();                                           // Close the file again
         Serial.println(String("\tSent file: ") + path);
         return true;
     }
-    Serial.println(String("\tFile Not Found: ") + path);   // If the file doesn't exist, return false
+    Serial.println(String("\tFile Not Found: ") + path);        // If the file doesn't exist, return false
     return false;
 }
 
 void HandleNotFound(){
-    if(!HandleFileRead(server.uri())){          // check if the file exists in the flash memory (SPIFFS), if so, send it
+    if(!HandleFileRead(server.uri())){                          // check if the file exists in the flash memory (SPIFFS), if so, send it
         String message = "File Not Found\n\n";
         message += "URI: ";
         message += server.uri();
@@ -406,63 +406,6 @@ void HandleNotFound(){
     }
 }
 
-
-void HandleData(){
-    String message = "";
-    char temperatureString[8];
-    for(int i=0; i<numberOfDevices; i++){
-        dtostrf(tempDev[i], 2, 1, temperatureString);
-        //message += getAddressToString( devAddr[i] );
-        //message += ":";
-        message += temperatureString;
-        message += "\n";
-    }
-
-    server.send(200, "text/html", message);
-}
-
-
-
-void HandlePlay(){
-    String melody = "";
-
-    Serial.print("URI: ");
-    Serial.println(server.uri());
-
-    for (uint8_t i=0; i < server.args(); i++){
-        if(server.argName(i).equals("melody")){
-            melody += server.arg(i);
-            Serial.print("Melody: ");
-            Serial.println(melody);
-        }
-        Serial.print("argument: ");
-        Serial.print(server.argName(i));
-        Serial.print(" value: ");
-        Serial.println(server.arg(i));
-    }
-
-    if(melody.length() > 0) {
-        //play_rtttl(melody.c_str(), MELODY_PIN);
-        //Rtttl::begin(MELODY_PIN, melody.c_str());
-        rtttl.play(melody);
-    }
-    else
-        server.send(200, "text/html", "'melody' GET parameter is required");
-
-    server.send(200, "text/html", melody);
-}
-
-
-
-void HandleLogout(){
-    if(server.method() == HTTP_POST){
-        server.send(200, "text/html", "OK");
-        wifiManager.resetSettings();
-    }
-    else{
-        server.send(200, "text/html", "post method only");
-    }
-}
 
 
 //Setting the temperature sensor
@@ -556,9 +499,36 @@ void setup() {
 
 
     // Setup routes
-    server.on("/data", HandleData);
-    server.on("/play", HandlePlay);
-    server.on("/logout", HandleLogout);
+    server.on("/data", [](){
+        String message = "";
+        char temperatureString[8];
+        for(int i=0; i<numberOfDevices; i++){
+            dtostrf(tempDev[i], 2, 1, temperatureString);
+            message += temperatureString;
+            message += "\n";
+        }
+
+        server.send(200, "text/html", message);        
+    });
+    server.on("/play", [](){
+        String melody = server.arg("melody");
+
+        if(melody.length() > 0){
+            rtttl.play(melody);
+            server.send(200, "text/html", String("Playing melody: ") + melody);        
+        }
+        else
+            server.send(400, "text/html", "'melody' GET parameter is required");
+    });
+    server.on("/logout", [](){
+        if(server.method() == HTTP_POST){
+            server.send(200, "text/html", "OK");
+            wifiManager.resetSettings();
+        }
+        else{
+            server.send(400, "text/html", "post method only");
+        }
+    });
     server.onNotFound( HandleNotFound );
     server.begin();
     Serial.println("HTTP server started at ip " + WiFi.localIP().toString() );
