@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" href="styles.css">
+
+    <script>
+        function httpGet(theUrl)
+        {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open( 'GET', theUrl, false ); // false for synchronous request
+            xmlHttp.send( null );
+            return xmlHttp.responseText;
+        }
+
+        function connect() {
+
+            let host = location.hostname;
+            if(host === 'localhost')
+                host = '192.168.1.72';
+            const connection = new WebSocket('ws://' + host + ':81/', ['arduino']);
+            console.log('Connection object', connection);
+            document.getElementById('out').style.display = 'block';
+            document.getElementById('out').innerHTML = 'connecting..';
+            let reconnectIntervalHandle;
+            connection.onopen = function () {
+                document.getElementById('btn-connect').style.display = 'none';
+                connection.send('loading..');
+                console.log(new Date(), ' Connected ' + new Date());
+            };
+            connection.onerror = function (error) {
+                console.log(new Date(), 'WebSocket Error ', error);
+            };
+            connection.onmessage = function (e) {
+                const out = document.getElementById('out');
+                const needScroll = out.scrollTop >= out.scrollHeight - out.clientHeight;
+                if(out.innerHTML.length > 20000) out.innerHTML = '';
+                out.innerHTML += "\n\n===============  msg  ===============\n"
+                    + e.data
+                    + "\n=====================================\n";
+                if(needScroll){
+                    out.scrollTop = out.scrollHeight - out.clientHeight;
+                }
+
+                try{
+                    let data = JSON.parse(e.data);
+                    if(data.temperatures) {
+                        const mainTempAddress = '28ee3577911302da';
+                        if(data.temperatures[mainTempAddress]){
+                            document.getElementById('temp').innerHTML = data.temperatures[mainTempAddress].toFixed(1) + " °C";
+                        }
+                        document.getElementById('all_temps').innerHTML = Object.values(data.temperatures).map(
+                            t => t.toFixed(1) + " °C"
+                        ).join(" ");
+                    }
+                    if(data.hum)
+                        document.getElementById('hum').innerHTML = data.hum + "%";
+                    if(data.heat_index)
+                        document.getElementById('heat_index').innerHTML = data.heat_index + " °C";
+                }
+                catch (err) {
+                    document.getElementById('out').innerHTML +=  "\n<b>" + err.message + "\nmessage: "+ e.data +"</b>";
+                }
+
+                // show reconnect button on no activity for a long time
+                clearInterval(reconnectIntervalHandle);
+                reconnectIntervalHandle = setTimeout(function() {
+                    console.log(new Date(), 'No activity for a long time - closing connection..');
+                    connection.close();
+                }, 5000);
+            };
+            connection.onclose = function () {
+                console.log(new Date(), 'WebSocket connection closed');
+                document.getElementById('out').style.display = 'none';
+                document.getElementById('btn-connect').style.display = 'block';
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', function(event) {
+            connect();
+        });
+    </script>
+</head>
+<body>
+<header>
+    <a href="index.html">index.html</a>
+    <a href="log.html">log.html</a>
+    <a href="play.html">play.html</a>
+    <a href="settings.html">settings.html</a>
+</header>
+
+<div>
+    <table>
+        <tr style="font-size: 2em">
+            <td style="text-align: right">Temperature:</td>
+            <td>
+                <span id='temp' style='font-size:1em'>..</span>
+            </td>
+        </tr>
+        <tr style="font-size: 2em">
+            <td style="text-align: right">Humidity:</td>
+            <td>
+                <span id='hum' style='font-size:1em'>..</span>
+            </td>
+        </tr>
+        <tr style="font-size: 1em">
+            <td style="text-align: right">Heat Index:</td>
+            <td>
+                <span id='heat_index' style='font-size:1em'>..</span>
+            </td>
+        </tr>
+        <tr style="font-size: 0.9em">
+            <td style="text-align: right">All temperatures:</td>
+            <td>
+                <span id='all_temps' style='font-size:1em'>..</span>
+            </td>
+        </tr>
+
+    </table>
+
+</div>
+<button
+        id="btn-connect"
+        onclick="connect()"
+        style="font-size:2em; margin-top: 30px; display: none">Reconnect!</button>
+
+<pre id='out' style='font-size:0.8em; color: #aaa; height: 200px; overflow-y: scroll;'>loading...</pre>
+</body>
+</html>
