@@ -13,6 +13,7 @@
 #include "ArduinoJson.h"
 #include "DubRtttl.h"
 #include "Routes.h"
+#include "EventService.h"
 #include "TemperatureService.h"
 #include "HumidityService.h"
 #include "utils.h"

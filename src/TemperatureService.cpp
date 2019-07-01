@@ -1,6 +1,7 @@
 #include "TemperatureService.h"
 #include "utils.h"
 
+
 TemperatureService::TemperatureService()
 {
 

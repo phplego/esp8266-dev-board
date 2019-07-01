@@ -260,29 +260,6 @@ void onAPStarted(WiFiManager * manager){
 }
 
 
-bool HandleFileRead(String path) {                              // send the right file to the client (if it exists)
-    Serial.println("handleFileRead: " + path);
-    if (path.endsWith("/")) path += "index.html";               // If a folder is requested, send the index file
-    String contentType = getContentType(path);                  // Get the MIME type
-    String pathWithGz = path + ".gz";
-    if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) {     // If the file exists, either as a compressed archive, or normal
-        Serial.println(String("\tFile exists: ") + path);
-        if (SPIFFS.exists(pathWithGz))                          // If there's a compressed version available
-            path += ".gz";                                      // Use the compressed verion
-        File file = SPIFFS.open(path, "r");                     // Open the file
-        size_t sent = app1.server->streamFile(file, contentType);     // Send it to the client
-        file.close();                                           // Close the file again
-        Serial.println(String("\tSent file: ") + path);
-        return true;
-    }
-    Serial.println(String("\tFile Not Found: ") + path);        // If the file doesn't exist, return false
-    return false;
-}
-
-
-
-
-
 
 //------------------------------------------
 void setup() {
@@ -336,16 +313,6 @@ void setup() {
 
     // Setup routes
 
-    app1.server->on("/play", [](){
-        String melody = app1.server->arg("melody");
-
-        if(melody.length() > 0){
-            app1.rtttl->play(melody);
-            app1.server->send(200, "text/html", String("Playing melody: ") + melody);        
-        }
-        else
-            app1.server->send(400, "text/html", "'melody' GET parameter is required");
-    });
     app1.server->on("/logout", [](){
         if(app1.server->method() == HTTP_POST){
             app1.server->send(200, "text/html", "OK");
@@ -355,22 +322,6 @@ void setup() {
             app1.server->send(400, "text/html", "post method only");
         }
     });
-    app1.server->onNotFound( [](){
-        if(!HandleFileRead(app1.server->uri())){                          // check if the file exists in the flash memory (SPIFFS), if so, send it
-            String message = "File Not Found\n\n";
-            message += "URI: ";
-            message += app1.server->uri();
-            message += "\nMethod: ";
-            message += (app1.server->method() == HTTP_GET)?"GET":"POST";
-            message += "\nArguments: ";
-            message += app1.server->args();
-            message += "\n";
-            for (uint8_t i=0; i < app1.server->args(); i++){
-                message += " " + app1.server->argName(i) + ": " + app1.server->arg(i) + "\n";
-            }
-            app1.server->send(404, "text/html", message);
-        }
-    } );
     app1.server->begin();
     Serial.println("HTTP server started at ip " + WiFi.localIP().toString() );
 

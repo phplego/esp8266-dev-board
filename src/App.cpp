@@ -13,14 +13,13 @@ void App::init()
     server      = new ESP8266WebServer(80);
     webSocket   = new WebSocketsServer(81);
     logSocket   = new WebSocketsServer(82);
-    routes      = new Routes(server);
     // oneWire     = new OneWire(D3);
     // DS18B20     = new DallasTemperature(oneWire);
     tempService = new TemperatureService();
     humService  = new HumidityService();
     display     = new SSD1306(0x3c, DISPLAY_SDA_PIN, DISPLAY_SCL_PIN);
     rtttl       = new DubRtttl(BUZZER_PIN);
-
+    routes      = new Routes(server, rtttl);
 
     // Setup Temperature Service
     tempService->init(ONE_WIRE_BUS, rtttl);
@@ -35,4 +34,10 @@ void App::init()
     mqtt            = new Adafruit_MQTT_Client(client, MQTT_HOST, MQTT_PORT, MQTT_USER, MQTT_PASS);
     mqtt_publish    = new Adafruit_MQTT_Publish(mqtt, "wifi2mqtt/esp8266_board_1");
 
+    EventService es;
+
+    int aaa = 1;
+    es.subscribe("E1", [aaa](const char * event){
+        
+    });
 }
