@@ -19,11 +19,11 @@
 
 
 
-#define ONE_WIRE_MAX_DEV    15                              // The maximum number of devices
-#define ONE_WIRE_BUS        D3                              // Pin to which is attached a temperature sensors DS18B20
-#define MELODY_PIN          D2                              // Pin connected to a speaker
-#define DISPLAY_SDA_PIN     D6                              // Display SDA pin
-#define DISPLAY_SCL_PIN     D7                              // Display SCL pin
+// #define ONE_WIRE_MAX_DEV    15                              // The maximum number of devices
+// #define ONE_WIRE_BUS        D3                              // Pin to which is attached a temperature sensors DS18B20
+// #define MELODY_PIN          D2                              // Pin connected to a speaker
+// #define DISPLAY_SDA_PIN     D6                              // Display SDA pin
+// #define DISPLAY_SCL_PIN     D7                              // Display SCL pin
 
 
 //DubRtttl          rtttl(MELODY_PIN);                        // Melody player
@@ -99,25 +99,10 @@ int getTempIndex(const char * id){
 
 
 
-class MyLog {
-    public:
-
-    static void print(const char * str) {
-        Serial.print(str);
-        app1.logSocket->broadcastTXT(str);
-    }
-
-    static void println(const char * str) {
-        Serial.println(str);
-        app1.logSocket->broadcastTXT(String(str) + "\n");
-    }
-};
-
-
 
 void myTone(int freq, int duration)
 {
-    tone(MELODY_PIN, freq, duration);
+    tone(BUZZER_PIN, freq, duration);
     delay(duration);
 }
 
@@ -175,7 +160,7 @@ void tempLoop(long now) {
         JsonObject& temperatures = root.createNestedObject("temperatures");
 
         for (int i = 0; i < numberOfDevices; i++) {
-            tempDev[i] = app1.DS18B20->getTempC( devAddr[i] ); // Measuring temperature in Celsius and save the measured value to the array
+            tempDev[i] = app1.tempService->DS18B20->getTempC( devAddr[i] ); // Measuring temperature in Celsius and save the measured value to the array
             temperatures[getAddressToString(devAddr[i])] = tempDev[i];
         }
 
@@ -183,8 +168,8 @@ void tempLoop(long now) {
         root.prettyPrintTo(jsonStr, JSON_SIZE);
         app1.webSocket->broadcastTXT(jsonStr);
         
-        app1.DS18B20->setWaitForConversion(false); //No waiting for measurement
-        app1.DS18B20->requestTemperatures(); //Initiate the temperature measurement
+        app1.tempService->DS18B20->setWaitForConversion(false); //No waiting for measurement
+        app1.tempService->DS18B20->requestTemperatures(); //Initiate the temperature measurement
         lastTempMeasTime = millis();  //Remember the last time measurement
 
         humidityLoop();
@@ -378,14 +363,14 @@ void HandleNotFound(){
 
 //Setting the temperature sensor
 void SetupDS18B20() {
-    app1.DS18B20->begin();
+    app1.tempService->DS18B20->begin();
 
-    numberOfDevices = app1.DS18B20->getDeviceCount();
+    numberOfDevices = app1.tempService->DS18B20->getDeviceCount();
 
     // Loop through each device, print out address
     for (int i = 0; i < numberOfDevices; i++) {
         // save device's address
-        app1.DS18B20->getAddress(devAddr[i], i);
+        app1.tempService->DS18B20->getAddress(devAddr[i], i);
     }
 
 }

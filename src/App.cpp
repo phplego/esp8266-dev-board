@@ -14,12 +14,16 @@ void App::init()
     webSocket   = new WebSocketsServer(81);
     logSocket   = new WebSocketsServer(82);
     routes      = new Routes(server);
-    oneWire     = new OneWire(D3);
-    DS18B20     = new DallasTemperature(oneWire);
+    // oneWire     = new OneWire(D3);
+    // DS18B20     = new DallasTemperature(oneWire);
+    tempService = new TemperatureService();
     dht         = new DHTesp();
     display     = new SSD1306(0x3c, DISPLAY_SDA_PIN, DISPLAY_SCL_PIN);
     rtttl       = new DubRtttl(BUZZER_PIN);
 
+
+    // Setup Temperature Service
+    tempService->init(ONE_WIRE_BUS);
 
     // Create an ESP8266 WiFiClient class to connect to the MQTT server.
     WiFiClient* client = new WiFiClient();
