@@ -14,6 +14,8 @@
 #include "ArduinoJson.h"
 #include "DubRtttl.h"
 #include "utils.h"
+#include "Routes.h"
+#include "App.h"
 
 
 
@@ -24,11 +26,11 @@
 #define DISPLAY_SCL_PIN     D7                              // Display SCL pin
 
 
-DubRtttl          rtttl(MELODY_PIN);                        // Melody player
-WiFiManager       wifiManager;                              // WiFi Manager
-OneWire           oneWire(ONE_WIRE_BUS);                    
-DallasTemperature DS18B20(&oneWire);                        // Temperature sensor access object    
-DHTesp            dht;                                      // DHT-11
+//DubRtttl          rtttl(MELODY_PIN);                        // Melody player
+//WiFiManager       wifiManager;                              // WiFi Manager
+//OneWire           oneWire(ONE_WIRE_BUS);                    
+//DallasTemperature DS18B20(&oneWire);                        // Temperature sensor access object    
+//DHTesp            dht;                                      // DHT-11
 
 int             numberOfDevices;                            // Number of temperature devices found
 DeviceAddress   devAddr[ONE_WIRE_MAX_DEV];                  // An array device temperature sensors
@@ -48,52 +50,42 @@ const long      mqttPublishInterval             = 60*1000;  // MQTT publish inte
 const char *    TEMP_ID_MAIN                    = "28ee3577911302da";
 const char *    TEMP_ID_SCND                    = "287c004592160207";
 
-//------------------------------------------
-// ALERT MELODIES AND TEMPERATURES
-int alert_count = 3;
-char alert_melodies[3][100] = {
-    "SuperMario:d=4,o=5,b=100:16e6,16e6,32p,8e6,16c6,8e6,8g6,8p,8g",
-    "SuperMarioUnder:d=4,o=6,b=100:32c,32p,32c7,32p,32a5,32p,32a,32p,32a#5,32p,32a#",
-    "MissionImp:d=16,o=6,b=95:32d,32d#,32d,32d#,32d,32d#,32d,32d#,32d,32d,32d#,32e,32f,32f#"
-};
-int alert_temps[] = {37, 39, 40};
-
-//------------------------------------------
-// WIFI
-const char* ssid = "<SSID>";
-const char* password = "<PASS>";
-
 
 
 //------------------------------------------
 // HTTP
-ESP8266WebServer server(80);
-WebSocketsServer webSocket(81);
-WebSocketsServer logSocket(82);
+//ESP8266WebServer server(80);
+//Routes routes(&server);
+// WebSocketsServer webSocket(81);
+// WebSocketsServer logSocket(82);
+
 
 
 //------------------------------------------
 // DISPLAY
-SSD1306  display (0x3c, DISPLAY_SDA_PIN, DISPLAY_SCL_PIN);
+//SSD1306  display (0x3c, DISPLAY_SDA_PIN, DISPLAY_SCL_PIN);
 
 
 //------------------------------------------
 // MQTT
 
-#define MQTT_HOST  "192.168.1.2"    // MQTT host (m21.cloudmqtt.com)
-#define MQTT_PORT  11883            // MQTT port (18076)   
-#define MQTT_USER  "mfkrdxtb"       // Ingored if brocker allows guest connection
-#define MQTT_PASS  "jD-qPTjdtV34"   // Ingored if brocker allows guest connection
+// #define MQTT_HOST  "192.168.1.2"    // MQTT host (m21.cloudmqtt.com)
+// #define MQTT_PORT  11883            // MQTT port (18076)   
+// #define MQTT_USER  "mfkrdxtb"       // Ingored if brocker allows guest connection
+// #define MQTT_PASS  "jD-qPTjdtV34"   // Ingored if brocker allows guest connection
 
 // Create an ESP8266 WiFiClient class to connect to the MQTT server.
-WiFiClient client;
+// WiFiClient client;
 
-// Setup the MQTT client class by passing in the WiFi client and MQTT server and login details.
-Adafruit_MQTT_Client mqtt(&client, MQTT_HOST, MQTT_PORT, MQTT_USER, MQTT_PASS);
+// // Setup the MQTT client class by passing in the WiFi client and MQTT server and login details.
+// Adafruit_MQTT_Client mqtt(&client, MQTT_HOST, MQTT_PORT, MQTT_USER, MQTT_PASS);
 
-// Publish object
-Adafruit_MQTT_Publish mqtt_publish = Adafruit_MQTT_Publish(&mqtt, "wifi2mqtt/esp8266_board_1");
+// // Publish object
+// Adafruit_MQTT_Publish mqtt_publish = Adafruit_MQTT_Publish(&mqtt, "wifi2mqtt/esp8266_board_1");
 
+
+// Application object
+App app1 = App();
 
 
 int getTempIndex(const char * id){
@@ -112,39 +104,15 @@ class MyLog {
 
     static void print(const char * str) {
         Serial.print(str);
-        logSocket.broadcastTXT(str);
+        app1.logSocket->broadcastTXT(str);
     }
 
     static void println(const char * str) {
         Serial.println(str);
-        logSocket.broadcastTXT(String(str) + "\n");
+        app1.logSocket->broadcastTXT(String(str) + "\n");
     }
 };
 
-class TempAlert {
-    public:
-
-    static void loop() {
-        if(numberOfDevices == 0) return;
-
-        float tempC = tempDev[getTempIndex(TEMP_ID_MAIN)];
-
-        int prevWarnLevel = warnLevel;
-
-        warnLevel = -1;
-        for(int ii = 0; ii < alert_count; ii++){
-            if(tempC >= alert_temps[ii]){
-                warnLevel = ii;
-            }
-        }
-
-        if(warnLevel != prevWarnLevel){
-            if(warnLevel != -1){
-                rtttl.play(alert_melodies[warnLevel]);
-            }
-        }
-    }
-};
 
 
 void myTone(int freq, int duration)
@@ -166,16 +134,16 @@ void getTempStr(char *buffer, const char * id){
 void humidityLoop() {
     //delay(dht.getMinimumSamplingPeriod());
 
-    float h = dht.getHumidity();
-    float temperature = dht.getTemperature();
+    float h = app1.dht->getHumidity();
+    float temperature = app1.dht->getTemperature();
 
-    if(dht.getStatus() != 0){
+    if(app1.dht->getStatus() != 0){
         return;
     }
     theHumidity = h;
-    float heatIndex = dht.computeHeatIndex(temperature, theHumidity, false);
+    float heatIndex = app1.dht->computeHeatIndex(temperature, theHumidity, false);
 
-    Serial.print(dht.getStatusString());
+    Serial.print(app1.dht->getStatusString());
     Serial.print("\t humidity: ");
     Serial.print(theHumidity, 1);
     Serial.print("\t t: ");
@@ -187,7 +155,7 @@ void humidityLoop() {
 
     char jsonStr[100];
     sprintf(jsonStr, "{\"hum\":%.0f, \"dht_temp\":%.1f, \"heat_index\":%.1f}", theHumidity, temperature, heatIndex);
-    webSocket.broadcastTXT(jsonStr);
+    app1.webSocket->broadcastTXT(jsonStr);
 }
 
 
@@ -195,7 +163,7 @@ void humidityLoop() {
 void tempLoop(long now) {
 
     // skip temperature measurement if melody is playing
-    if(rtttl.isPlaying()){
+    if(app1.rtttl->isPlaying()){
         return;
     }
 
@@ -207,16 +175,16 @@ void tempLoop(long now) {
         JsonObject& temperatures = root.createNestedObject("temperatures");
 
         for (int i = 0; i < numberOfDevices; i++) {
-            tempDev[i] = DS18B20.getTempC( devAddr[i] ); // Measuring temperature in Celsius and save the measured value to the array
+            tempDev[i] = app1.DS18B20->getTempC( devAddr[i] ); // Measuring temperature in Celsius and save the measured value to the array
             temperatures[getAddressToString(devAddr[i])] = tempDev[i];
         }
 
         char jsonStr[JSON_SIZE];
         root.prettyPrintTo(jsonStr, JSON_SIZE);
-        webSocket.broadcastTXT(jsonStr);
+        app1.webSocket->broadcastTXT(jsonStr);
         
-        DS18B20.setWaitForConversion(false); //No waiting for measurement
-        DS18B20.requestTemperatures(); //Initiate the temperature measurement
+        app1.DS18B20->setWaitForConversion(false); //No waiting for measurement
+        app1.DS18B20->requestTemperatures(); //Initiate the temperature measurement
         lastTempMeasTime = millis();  //Remember the last time measurement
 
         humidityLoop();
@@ -234,22 +202,22 @@ void displayLoop() {
         getTempStr(temp2Str, TEMP_ID_SCND);
         sprintf(humStr, "%.0f", theHumidity);
 
-        display.clear(); // clearing the display
+        app1.display->clear(); // clearing the display
 
-        display.setFont(ArialMT_Plain_16);
+        app1.display->setFont(ArialMT_Plain_16);
         // first line (yellow)
-        display.drawString(90, 0, String("") + humStr + "%");
+        app1.display->drawString(90, 0, String("") + humStr + "%");
         // second line
-        display.drawString(5, 20, String("t = ") + tempStr + " ºC");
+        app1.display->drawString(5, 20, String("t = ") + tempStr + " ºC");
 
-        display.setFont(ArialMT_Plain_10);
-        display.drawString(90, 15, String("") + temp2Str + " ºC");
-        display.drawString(5, 40, String("ip: ") + WiFi.localIP().toString());
+        app1.display->setFont(ArialMT_Plain_10);
+        app1.display->drawString(90, 15, String("") + temp2Str + " ºC");
+        app1.display->drawString(5, 40, String("ip: ") + WiFi.localIP().toString());
 
         // blinking pixel
         if (millis() / 200 % 2)
-            display.setPixel(0, 0);
-        display.display();
+            app1.display->setPixel(0, 0);
+        app1.display->display();
         lastDispTime = millis();
     }
 }
@@ -258,17 +226,17 @@ void MQTT_connect() {
   int8_t ret;
 
   // Stop if already connected.
-  if (mqtt.connected()) {
+  if (app1.mqtt->connected()) {
     return;
   }
 
   Serial.print("Connecting to MQTT... ");
 
   uint8_t retries = 3;
-  while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
-       Serial.println(mqtt.connectErrorString(ret));
+  while ((ret = app1.mqtt->connect()) != 0) { // connect will return 0 for connected
+       Serial.println(app1.mqtt->connectErrorString(ret));
        Serial.println("Retrying MQTT connection in 5 seconds...");
-       mqtt.disconnect();
+       app1.mqtt->disconnect();
        delay(5000);  // wait 5 seconds
        retries--;
        if (retries == 0) {
@@ -304,7 +272,7 @@ void mqttLoop() {
         root.prettyPrintTo(jsonStr, JSON_SIZE);
 
         MQTT_connect();
-        if (!mqtt_publish.publish(jsonStr)) {
+        if (!app1.mqtt_publish->publish(jsonStr)) {
           Serial.println("MQTT publish failed!");
         } else {
           Serial.println("MQTT publish ok!");
@@ -321,7 +289,7 @@ void logWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len
             Serial.printf("[%u] Disconnected!\n", num);
             break;
         case WStype_CONNECTED: {              // if a new websocket connection is established
-            IPAddress ip = webSocket.remoteIP(num);
+            IPAddress ip = app1.logSocket->remoteIP(num);
             Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
         }
             break;
@@ -329,7 +297,7 @@ void logWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len
             Serial.printf("[%u] get Text: %s\n", num, payload);
             char str[256];
             sprintf(str, "[%u] get Text: %s\n", num, payload);
-            logSocket.sendTXT(num, str);
+            app1.logSocket->sendTXT(num, str);
             break;
     }
 }
@@ -342,7 +310,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
             Serial.printf("[%u] Disconnected!\n", num);
             break;
         case WStype_CONNECTED: {              // if a new websocket connection is established
-            IPAddress ip = webSocket.remoteIP(num);
+            IPAddress ip = app1.webSocket->remoteIP(num);
             Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
         }
             break;
@@ -351,22 +319,22 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
             if (payload[0] == '#') {            // we get RGB data
                 // example
             }
-            webSocket.sendTXT(num, payload, len);
+            app1.webSocket->sendTXT(num, payload, len);
             break;
     }
 }
 
 
 void onAPStarted(WiFiManager * manager){
-    display.clear();
-    display.setFont(ArialMT_Plain_10);
-    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    app1.display->clear();
+    app1.display->setFont(ArialMT_Plain_10);
+    app1.display->setTextAlignment(TEXT_ALIGN_LEFT);
     int top = 20;
-    display.drawString(0, top + 0, String("Please connect to Wi-Fi"));
-    display.drawString(0, top + 10, String("Network: E-STOVE"));
-    display.drawString(0, top + 20, String("Password: 12341234"));
-    display.drawString(0, top + 30, String("Then go to ip: 10.0.1.1"));
-    display.display();
+    app1.display->drawString(0, top + 0, String("Please connect to Wi-Fi"));
+    app1.display->drawString(0, top + 10, String("Network: E-STOVE"));
+    app1.display->drawString(0, top + 20, String("Password: 12341234"));
+    app1.display->drawString(0, top + 30, String("Then go to ip: 10.0.1.1"));
+    app1.display->display();
 }
 
 
@@ -380,7 +348,7 @@ bool HandleFileRead(String path) {                              // send the righ
         if (SPIFFS.exists(pathWithGz))                          // If there's a compressed version available
             path += ".gz";                                      // Use the compressed verion
         File file = SPIFFS.open(path, "r");                     // Open the file
-        size_t sent = server.streamFile(file, contentType);     // Send it to the client
+        size_t sent = app1.server->streamFile(file, contentType);     // Send it to the client
         file.close();                                           // Close the file again
         Serial.println(String("\tSent file: ") + path);
         return true;
@@ -390,19 +358,19 @@ bool HandleFileRead(String path) {                              // send the righ
 }
 
 void HandleNotFound(){
-    if(!HandleFileRead(server.uri())){                          // check if the file exists in the flash memory (SPIFFS), if so, send it
+    if(!HandleFileRead(app1.server->uri())){                          // check if the file exists in the flash memory (SPIFFS), if so, send it
         String message = "File Not Found\n\n";
         message += "URI: ";
-        message += server.uri();
+        message += app1.server->uri();
         message += "\nMethod: ";
-        message += (server.method() == HTTP_GET)?"GET":"POST";
+        message += (app1.server->method() == HTTP_GET)?"GET":"POST";
         message += "\nArguments: ";
-        message += server.args();
+        message += app1.server->args();
         message += "\n";
-        for (uint8_t i=0; i<server.args(); i++){
-            message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+        for (uint8_t i=0; i<app1.server->args(); i++){
+            message += " " + app1.server->argName(i) + ": " + app1.server->arg(i) + "\n";
         }
-        server.send(404, "text/html", message);
+        app1.server->send(404, "text/html", message);
     }
 }
 
@@ -410,46 +378,14 @@ void HandleNotFound(){
 
 //Setting the temperature sensor
 void SetupDS18B20() {
-    DS18B20.begin();
+    app1.DS18B20->begin();
 
-    Serial.print("Parasite power is: ");
-    if ( DS18B20.isParasitePowerMode() ) {
-        Serial.println("ON");
-    } else {
-        Serial.println("OFF");
-    }
-
-    numberOfDevices = DS18B20.getDeviceCount();
-    Serial.print( "Device count: " );
-    Serial.println( numberOfDevices );
-
-    lastTempMeasTime = millis();
-    DS18B20.requestTemperatures();
+    numberOfDevices = app1.DS18B20->getDeviceCount();
 
     // Loop through each device, print out address
     for (int i = 0; i < numberOfDevices; i++) {
-        // Search the wire for address
-        if ( DS18B20.getAddress(devAddr[i], i) ) {
-            //devAddr[i] = tempDeviceAddress;
-            Serial.print("Found device ");
-            Serial.print(i, DEC);
-            Serial.print(" with address: " + getAddressToString(devAddr[i]));
-            Serial.println();
-        } else {
-            Serial.print("Found ghost device at ");
-            Serial.print(i, DEC);
-            Serial.print(" but could not detect address. Check power and cabling");
-        }
-
-        //Get resolution of DS18b20
-        Serial.print("Resolution: ");
-        Serial.print(DS18B20.getResolution( devAddr[i] ));
-        Serial.println();
-
-        //Read temperature from DS18b20
-        float tempC = DS18B20.getTempC( devAddr[i] );
-        Serial.print("Temp C: ");
-        Serial.println(tempC);
+        // save device's address
+        app1.DS18B20->getAddress(devAddr[i], i);
     }
 
 }
@@ -462,6 +398,8 @@ void setup() {
     myTone(400, 100);
     myTone(1200, 100);
 
+    app1.init();
+
     // Setup Serial port speed
     Serial.begin(115200);
 
@@ -470,20 +408,20 @@ void setup() {
 
 
     // Setup display
-    display.init();
-    display.flipScreenVertically();
-    display.clear();
-    display.setFont(ArialMT_Plain_16);
+    app1.display->init();
+    app1.display->flipScreenVertically();
+    app1.display->clear();
+    app1.display->setFont(ArialMT_Plain_16);
 
 
     // Setup WIFI
-    display.drawString(20,20, "Hello Oleg!");
-    display.setFont(ArialMT_Plain_10);
-    display.drawString(20,50, "connecting to wifi..");
-    display.display();
-    wifiManager.setAPCallback(onAPStarted);
-    wifiManager.setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
-    wifiManager.autoConnect("E-STOVE", "12341234"); // Blocks execution. Waits until connected
+    app1.display->drawString(20,20, "Hello Oleg!");
+    app1.display->setFont(ArialMT_Plain_10);
+    app1.display->drawString(20,50, "connecting to wifi..");
+    app1.display->display();
+    app1.wifiManager->setAPCallback(onAPStarted);
+    app1.wifiManager->setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
+    app1.wifiManager->autoConnect("E-STOVE", "12341234"); // Blocks execution. Waits until connected
 
     // Wait for WIFI connection
     while (WiFi.status() != WL_CONNECTED) {
@@ -499,7 +437,7 @@ void setup() {
 
 
     // Setup routes
-    server.on("/data", [](){
+    app1.server->on("/data", [](){
         String message = "";
         char temperatureString[8];
         for(int i=0; i<numberOfDevices; i++){
@@ -508,46 +446,44 @@ void setup() {
             message += "\n";
         }
 
-        server.send(200, "text/html", message);        
+        app1.server->send(200, "text/html", message);        
     });
-    server.on("/play", [](){
-        String melody = server.arg("melody");
+    app1.server->on("/play", [](){
+        String melody = app1.server->arg("melody");
 
         if(melody.length() > 0){
-            rtttl.play(melody);
-            server.send(200, "text/html", String("Playing melody: ") + melody);        
+            app1.rtttl->play(melody);
+            app1.server->send(200, "text/html", String("Playing melody: ") + melody);        
         }
         else
-            server.send(400, "text/html", "'melody' GET parameter is required");
+            app1.server->send(400, "text/html", "'melody' GET parameter is required");
     });
-    server.on("/logout", [](){
-        if(server.method() == HTTP_POST){
-            server.send(200, "text/html", "OK");
-            wifiManager.resetSettings();
+    app1.server->on("/logout", [](){
+        if(app1.server->method() == HTTP_POST){
+            app1.server->send(200, "text/html", "OK");
+            app1.wifiManager->resetSettings();
         }
         else{
-            server.send(400, "text/html", "post method only");
+            app1.server->send(400, "text/html", "post method only");
         }
     });
-    server.onNotFound( HandleNotFound );
-    server.begin();
+    app1.server->onNotFound( HandleNotFound );
+    app1.server->begin();
     Serial.println("HTTP server started at ip " + WiFi.localIP().toString() );
 
+
     // Setup Web Socket
-    webSocket.begin();                          // start the websocket server
-    webSocket.onEvent(webSocketEvent);          // if there's an incomming websocket message, go to function 'webSocketEvent'
+    app1.webSocket->begin();                          // start the websocket server
+    app1.webSocket->onEvent(webSocketEvent);          // if there's an incomming websocket message, go to function 'webSocketEvent'
     Serial.println("WebSocket server started.");
 
     // Setup Logging web socket
-    logSocket.begin();                          // start the websocket server (for logging)
-    logSocket.onEvent(logWebSocketEvent);
+    app1.logSocket->begin();                          // start the websocket server (for logging)
+    app1.logSocket->onEvent(logWebSocketEvent);
 
 
     // Setup DS18b20 temperature sensor
     SetupDS18B20();
-
-    // Setup DHT-11 humidity sensor
-    dht.setup(D4, DHTesp::DHT11); // Connect DHT sensor to GPIO 4
 
     // Play second start melody
     myTone(800, 100);
@@ -568,14 +504,13 @@ void setup() {
 void loop() {
     long t = millis();
 
-    server.handleClient();
-    webSocket.loop();
-    logSocket.loop();
+    app1.server->handleClient();
+    app1.webSocket->loop();
+    app1.logSocket->loop();
     tempLoop( t );
-    TempAlert::loop();
     displayLoop();
     mqttLoop();
-    rtttl.updateMelody();
+    app1.rtttl->updateMelody();
 
     loopCount ++;
 }
