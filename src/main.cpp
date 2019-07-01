@@ -32,17 +32,14 @@
 //DallasTemperature DS18B20(&oneWire);                        // Temperature sensor access object    
 //DHTesp            dht;                                      // DHT-11
 
-int             numberOfDevices;                            // Number of temperature devices found
-DeviceAddress   devAddr[ONE_WIRE_MAX_DEV];                  // An array device temperature sensors
-float           tempDev[ONE_WIRE_MAX_DEV];                  // Saving the last measurement of temperature
-float           tempDevLast[ONE_WIRE_MAX_DEV];              // Previous temperature measurement
-float           theHumidity                     = 0;        // Humidity
-long            lastTempMeasTime;                           // The last measurement time
-const int       tempMeasInterval                = 1000;     // The frequency of temperature measurement
+// int             numberOfDevices;                            // Number of temperature devices found
+// DeviceAddress   devAddr[ONE_WIRE_MAX_DEV];                  // An array device temperature sensors
+// float           tempDev[ONE_WIRE_MAX_DEV];                  // Saving the last measurement of temperature
+// float           theHumidity                     = 0;        // Humidity
+// long            lastTempMeasTime;                           // The last measurement time
+// const int       tempMeasInterval                = 1000;     // The frequency of temperature measurement
 long            lastDispTime;                               // The last display update time
 const int       updateDisplayInterval           = 50;       // The frequency of display refreshing
-long            loopCount                       = 0;
-int             warnLevel                       = 0;
 
 long            lastMqttPublishTime             = 0;        // The last MQTT publish time
 const long      mqttPublishInterval             = 60*1000;  // MQTT publish interval
@@ -88,17 +85,6 @@ const char *    TEMP_ID_SCND                    = "287c004592160207";
 App app1 = App();
 
 
-int getTempIndex(const char * id){
-    for(int i = 0; i < numberOfDevices; i++){
-        if (strcmp(getAddressToString(devAddr[i]).c_str(), id) == 0){
-            return i;
-        }
-    }
-    return 0;
-}
-
-
-
 
 void myTone(int freq, int duration)
 {
@@ -107,74 +93,73 @@ void myTone(int freq, int duration)
 }
 
 
-void getTempStr(char *buffer, const char * id){
-    if(numberOfDevices == 0){
+void getTempStr(char * buffer, const char * sensorAddress){
+    if(app1.tempService->DS18B20->getDeviceCount() == 0){
         sprintf(buffer, "no devices");
         return;
     }
-    int index = getTempIndex(id);
-    sprintf(buffer, "%.1f", tempDev[index]);
+    sprintf(buffer, "%.1f", app1.tempService->getTemperatureByAddress(sensorAddress));
 }
 
-void humidityLoop() {
-    //delay(dht.getMinimumSamplingPeriod());
+// void humidityLoop() {
+//     //delay(dht.getMinimumSamplingPeriod());
 
-    float h = app1.dht->getHumidity();
-    float temperature = app1.dht->getTemperature();
+//     float h = app1.dht->getHumidity();
+//     float temperature = app1.dht->getTemperature();
 
-    if(app1.dht->getStatus() != 0){
-        return;
-    }
-    theHumidity = h;
-    float heatIndex = app1.dht->computeHeatIndex(temperature, theHumidity, false);
+//     if(app1.dht->getStatus() != 0){
+//         return;
+//     }
+//     theHumidity = h;
+//     float heatIndex = app1.dht->computeHeatIndex(temperature, theHumidity, false);
 
-    Serial.print(app1.dht->getStatusString());
-    Serial.print("\t humidity: ");
-    Serial.print(theHumidity, 1);
-    Serial.print("\t t: ");
-    Serial.print(temperature, 1);
-    Serial.print("\t HeatIndex: ");
-    Serial.print(heatIndex, 1);
-    Serial.print("\t Free heap size: ");
-    Serial.println(system_get_free_heap_size(), 1);
+//     Serial.print(app1.dht->getStatusString());
+//     Serial.print("\t humidity: ");
+//     Serial.print(theHumidity, 1);
+//     Serial.print("\t t: ");
+//     Serial.print(temperature, 1);
+//     Serial.print("\t HeatIndex: ");
+//     Serial.print(heatIndex, 1);
+//     Serial.print("\t Free heap size: ");
+//     Serial.println(system_get_free_heap_size(), 1);
 
-    char jsonStr[100];
-    sprintf(jsonStr, "{\"hum\":%.0f, \"dht_temp\":%.1f, \"heat_index\":%.1f}", theHumidity, temperature, heatIndex);
-    app1.webSocket->broadcastTXT(jsonStr);
-}
+//     char jsonStr[100];
+//     sprintf(jsonStr, "{\"hum\":%.0f, \"dht_temp\":%.1f, \"heat_index\":%.1f}", theHumidity, temperature, heatIndex);
+//     app1.webSocket->broadcastTXT(jsonStr);
+// }
 
 
-//Loop measuring the temperature
-void tempLoop(long now) {
+// //Loop measuring the temperature
+// void tempLoop(long now) {
 
-    // skip temperature measurement if melody is playing
-    if(app1.rtttl->isPlaying()){
-        return;
-    }
+//     // skip temperature measurement if melody is playing
+//     if(app1.rtttl->isPlaying()){
+//         return;
+//     }
 
-    const int JSON_SIZE = 200;
+//     const int JSON_SIZE = 200;
 
-    if ( now - lastTempMeasTime > tempMeasInterval ) { // Take a measurement at a fixed time (tempMeasInterval = 1000ms, 1s)
-        StaticJsonBuffer<JSON_SIZE> jsonBuffer;
-        JsonObject& root = jsonBuffer.createObject();
-        JsonObject& temperatures = root.createNestedObject("temperatures");
+//     if ( now - lastTempMeasTime > tempMeasInterval ) { // Take a measurement at a fixed time (tempMeasInterval = 1000ms, 1s)
+//         StaticJsonBuffer<JSON_SIZE> jsonBuffer;
+//         JsonObject& root = jsonBuffer.createObject();
+//         JsonObject& temperatures = root.createNestedObject("temperatures");
 
-        for (int i = 0; i < numberOfDevices; i++) {
-            tempDev[i] = app1.tempService->DS18B20->getTempC( devAddr[i] ); // Measuring temperature in Celsius and save the measured value to the array
-            temperatures[getAddressToString(devAddr[i])] = tempDev[i];
-        }
+//         for (int i = 0; i < numberOfDevices; i++) {
+//             tempDev[i] = app1.tempService->DS18B20->getTempC( devAddr[i] ); // Measuring temperature in Celsius and save the measured value to the array
+//             temperatures[getAddressToString(devAddr[i])] = tempDev[i];
+//         }
 
-        char jsonStr[JSON_SIZE];
-        root.prettyPrintTo(jsonStr, JSON_SIZE);
-        app1.webSocket->broadcastTXT(jsonStr);
+//         char jsonStr[JSON_SIZE];
+//         root.prettyPrintTo(jsonStr, JSON_SIZE);
+//         app1.webSocket->broadcastTXT(jsonStr);
         
-        app1.tempService->DS18B20->setWaitForConversion(false); //No waiting for measurement
-        app1.tempService->DS18B20->requestTemperatures(); //Initiate the temperature measurement
-        lastTempMeasTime = millis();  //Remember the last time measurement
+//         app1.tempService->DS18B20->setWaitForConversion(false); //No waiting for measurement
+//         app1.tempService->DS18B20->requestTemperatures(); //Initiate the temperature measurement
+//         lastTempMeasTime = millis();  //Remember the last time measurement
 
-        humidityLoop();
-    }
-}
+//         humidityLoop();
+//     }
+// }
 
 
 void displayLoop() {
@@ -185,7 +170,7 @@ void displayLoop() {
         char humStr[8];
         getTempStr(tempStr, TEMP_ID_MAIN);
         getTempStr(temp2Str, TEMP_ID_SCND);
-        sprintf(humStr, "%.0f", theHumidity);
+        sprintf(humStr, "%.0f", app1.humService->getHumidity());
 
         app1.display->clear(); // clearing the display
 
@@ -210,7 +195,7 @@ void displayLoop() {
 void MQTT_connect() {
   int8_t ret;
 
-  // Stop if already connected.
+  // Do nothing if already connected.
   if (app1.mqtt->connected()) {
     return;
   }
@@ -234,14 +219,7 @@ void MQTT_connect() {
 void mqttLoop() {
     const int JSON_SIZE = 300;
     long now = millis();
-    if ( (!lastMqttPublishTime && tempDev[0] > 0) || now - lastMqttPublishTime > mqttPublishInterval ) {
-
-        char tempStr[8];
-        char temp2Str[8];
-        char humStr[8];
-        getTempStr(tempStr, TEMP_ID_MAIN);
-        getTempStr(temp2Str, TEMP_ID_SCND);
-        sprintf(humStr, "%.0f", theHumidity);
+    if ( (!lastMqttPublishTime && app1.tempService->temperatures                    [0] > 0) || now - lastMqttPublishTime > mqttPublishInterval ) {
 
         StaticJsonBuffer<JSON_SIZE> jsonBuffer;
         JsonObject& root = jsonBuffer.createObject();
@@ -249,9 +227,9 @@ void mqttLoop() {
         JsonObject& temperatures = root.createNestedObject("temperatures");
 
 
-        temperatures["main"] = tempStr;
-        temperatures["second"] = temp2Str;
-        root["humidity"] = humStr;
+        temperatures["main"]    = app1.tempService->getTemperatureByAddress(TEMP_ID_MAIN);
+        temperatures["second"]  = app1.tempService->getTemperatureByAddress(TEMP_ID_SCND);
+        root["humidity"] = app1.humService->getHumidity();
 
         char jsonStr[JSON_SIZE];
         root.prettyPrintTo(jsonStr, JSON_SIZE);
@@ -361,19 +339,6 @@ void HandleNotFound(){
 
 
 
-//Setting the temperature sensor
-void SetupDS18B20() {
-    app1.tempService->DS18B20->begin();
-
-    numberOfDevices = app1.tempService->DS18B20->getDeviceCount();
-
-    // Loop through each device, print out address
-    for (int i = 0; i < numberOfDevices; i++) {
-        // save device's address
-        app1.tempService->DS18B20->getAddress(devAddr[i], i);
-    }
-
-}
 
 //------------------------------------------
 void setup() {
@@ -384,6 +349,10 @@ void setup() {
     myTone(1200, 100);
 
     app1.init();
+
+    myTone(600, 100);
+    myTone(300, 100);
+
 
     // Setup Serial port speed
     Serial.begin(115200);
@@ -422,17 +391,7 @@ void setup() {
 
 
     // Setup routes
-    app1.server->on("/data", [](){
-        String message = "";
-        char temperatureString[8];
-        for(int i=0; i<numberOfDevices; i++){
-            dtostrf(tempDev[i], 2, 1, temperatureString);
-            message += temperatureString;
-            message += "\n";
-        }
 
-        app1.server->send(200, "text/html", message);        
-    });
     app1.server->on("/play", [](){
         String melody = app1.server->arg("melody");
 
@@ -467,9 +426,6 @@ void setup() {
     app1.logSocket->onEvent(logWebSocketEvent);
 
 
-    // Setup DS18b20 temperature sensor
-    SetupDS18B20();
-
     // Play second start melody
     myTone(800, 100);
     myTone(400, 100);
@@ -492,10 +448,9 @@ void loop() {
     app1.server->handleClient();
     app1.webSocket->loop();
     app1.logSocket->loop();
-    tempLoop( t );
+    app1.tempService->loop();
+    app1.humService->loop();
     displayLoop();
     mqttLoop();
     app1.rtttl->updateMelody();
-
-    loopCount ++;
 }

@@ -5,9 +5,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <WiFiClient.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
-#include <DHTesp.h>
 #include <WebSocketsServer.h>
 #include <WiFiManager.h>
 #include <SSD1306.h>
@@ -17,9 +14,9 @@
 #include "DubRtttl.h"
 #include "Routes.h"
 #include "TemperatureService.h"
+#include "HumidityService.h"
 #include "utils.h"
 
-#define ONE_WIRE_MAX_DEV    15                              // The maximum number of devices
 #define ONE_WIRE_BUS        D3                              // Pin to which is attached a temperature sensors DS18B20
 #define BUZZER_PIN          D2                              // Pin connected to a speaker
 #define DISPLAY_SDA_PIN     D6                              // Display SDA pin
@@ -41,10 +38,8 @@ class App{
         WebSocketsServer*   webSocket;
         WebSocketsServer*   logSocket;        
 
-        //OneWire*            oneWire;
-        //DallasTemperature*  DS18B20;
         TemperatureService* tempService;
-        DHTesp*             dht;
+        HumidityService*    humService;
         SSD1306*            display;
         DubRtttl*           rtttl; 
 
