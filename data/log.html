@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="styles.css">
+
+    <script src="common.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function(event) {
+            let host = location.hostname;
+            if(host === 'localhost')
+                host = '192.168.1.72';
+            const connection = new WebSocket('ws://' + host + ':81/', ['arduino']);
+            console.log('Connection object', connection);
+            connection.onopen = function () {
+                connection.send('Connect ' + new Date());
+                console.log('Connect ' + new Date());
+            };
+            connection.onerror = function (error) {
+                console.log('WebSocket Error ', error);
+            };
+            connection.onmessage = function (e) {
+                console.log('Server: ', e.data);
+                document.getElementById('out').innerHTML += e.data;
+            };
+            connection.onclose = function () {
+                console.log('WebSocket connection closed');
+            };
+
+        });
+    </script>
+</head>
+<body>
+<header>
+    <script>insertMenu();</script>>
+</header>
+
+<pre id='out'></pre>
+</body>
+</html>
