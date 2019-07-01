@@ -1,3 +1,5 @@
+#pragma once
+
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include "DubRtttl.h"

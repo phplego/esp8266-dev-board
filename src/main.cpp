@@ -246,47 +246,6 @@ void mqttLoop() {
 }
 
 
-void logWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) {
-    switch (type) {
-        case WStype_DISCONNECTED:             // if the websocket is disconnected
-            Serial.printf("[%u] Disconnected!\n", num);
-            break;
-        case WStype_CONNECTED: {              // if a new websocket connection is established
-            IPAddress ip = app1.logSocket->remoteIP(num);
-            Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-        }
-            break;
-        case WStype_TEXT:                     // if new text data is received
-            Serial.printf("[%u] get Text: %s\n", num, payload);
-            char str[256];
-            sprintf(str, "[%u] get Text: %s\n", num, payload);
-            app1.logSocket->sendTXT(num, str);
-            break;
-    }
-}
-
-
-
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t len) { // When a WebSocket message is received
-    switch (type) {
-        case WStype_DISCONNECTED:             // if the websocket is disconnected
-            Serial.printf("[%u] Disconnected!\n", num);
-            break;
-        case WStype_CONNECTED: {              // if a new websocket connection is established
-            IPAddress ip = app1.webSocket->remoteIP(num);
-            Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-        }
-            break;
-        case WStype_TEXT:                     // if new text data is received
-            Serial.printf("[%u] get Text: %s\n", num, payload);
-            if (payload[0] == '#') {            // we get RGB data
-                // example
-            }
-            app1.webSocket->sendTXT(num, payload, len);
-            break;
-    }
-}
-
 
 void onAPStarted(WiFiManager * manager){
     app1.display->clear();
@@ -320,22 +279,7 @@ bool HandleFileRead(String path) {                              // send the righ
     return false;
 }
 
-void HandleNotFound(){
-    if(!HandleFileRead(app1.server->uri())){                          // check if the file exists in the flash memory (SPIFFS), if so, send it
-        String message = "File Not Found\n\n";
-        message += "URI: ";
-        message += app1.server->uri();
-        message += "\nMethod: ";
-        message += (app1.server->method() == HTTP_GET)?"GET":"POST";
-        message += "\nArguments: ";
-        message += app1.server->args();
-        message += "\n";
-        for (uint8_t i=0; i<app1.server->args(); i++){
-            message += " " + app1.server->argName(i) + ": " + app1.server->arg(i) + "\n";
-        }
-        app1.server->send(404, "text/html", message);
-    }
-}
+
 
 
 
@@ -411,19 +355,68 @@ void setup() {
             app1.server->send(400, "text/html", "post method only");
         }
     });
-    app1.server->onNotFound( HandleNotFound );
+    app1.server->onNotFound( [](){
+        if(!HandleFileRead(app1.server->uri())){                          // check if the file exists in the flash memory (SPIFFS), if so, send it
+            String message = "File Not Found\n\n";
+            message += "URI: ";
+            message += app1.server->uri();
+            message += "\nMethod: ";
+            message += (app1.server->method() == HTTP_GET)?"GET":"POST";
+            message += "\nArguments: ";
+            message += app1.server->args();
+            message += "\n";
+            for (uint8_t i=0; i < app1.server->args(); i++){
+                message += " " + app1.server->argName(i) + ": " + app1.server->arg(i) + "\n";
+            }
+            app1.server->send(404, "text/html", message);
+        }
+    } );
     app1.server->begin();
     Serial.println("HTTP server started at ip " + WiFi.localIP().toString() );
 
 
     // Setup Web Socket
     app1.webSocket->begin();                          // start the websocket server
-    app1.webSocket->onEvent(webSocketEvent);          // if there's an incomming websocket message, go to function 'webSocketEvent'
-    Serial.println("WebSocket server started.");
+    app1.webSocket->onEvent([](uint8_t num, WStype_t type, uint8_t * payload, size_t len){
+        switch (type) {
+            case WStype_DISCONNECTED:             // if the websocket is disconnected
+                Serial.printf("[%u] Disconnected!\n", num);
+                break;
+            case WStype_CONNECTED: {              // if a new websocket connection is established
+                IPAddress ip = app1.webSocket->remoteIP(num);
+                Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+            }
+                break;
+            case WStype_TEXT:                     // if new text data is received
+                Serial.printf("[%u] get Text: %s\n", num, payload);
+                if (payload[0] == '#') {            // we get RGB data
+                    // example
+                }
+                app1.webSocket->sendTXT(num, payload, len);
+                break;
+        }
+    });
 
     // Setup Logging web socket
     app1.logSocket->begin();                          // start the websocket server (for logging)
-    app1.logSocket->onEvent(logWebSocketEvent);
+    app1.logSocket->onEvent([](uint8_t num, WStype_t type, uint8_t * payload, size_t len){
+        switch (type) {
+            case WStype_DISCONNECTED:             // if the websocket is disconnected
+                Serial.printf("[%u] Disconnected!\n", num);
+                break;
+            case WStype_CONNECTED: {              // if a new websocket connection is established
+                IPAddress ip = app1.logSocket->remoteIP(num);
+                Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+            }
+                break;
+            case WStype_TEXT:                     // if new text data is received
+                Serial.printf("[%u] get Text: %s\n", num, payload);
+                char str[256];
+                sprintf(str, "[%u] get Text: %s\n", num, payload);
+                app1.logSocket->sendTXT(num, str);
+                break;
+        }        
+    });
 
 
     // Play second start melody

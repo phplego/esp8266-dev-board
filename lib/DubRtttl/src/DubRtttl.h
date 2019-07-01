@@ -1,6 +1,6 @@
 /*
    DubRtttl.h - Library for playing rtttl melodies
-   Created by James BM, June 15, 2016.
+   Created by James BM, June 15, 2016. Then patched by PHPLego in 2018
    Based on the gits from Daniel Hall https://gist.github.com/smarthall/1618800
    Released into the public domain.
 
