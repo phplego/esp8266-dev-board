@@ -29,8 +29,13 @@ void HumidityService::loop()
             return;
         }
         humidity = h;
-        //float temperature = dht->getTemperature();
-        //float heatIndex = dht->computeHeatIndex(temperature, humidity, false);
+        float temperature = dht->getTemperature();
+        float heatIndex = dht->computeHeatIndex(temperature, humidity, false);
+
+        char jsonStr[200];
+        sprintf(jsonStr, "{\"hum\":%.0f, \"dht_temp\":%.1f, \"heat_index\":%.1f}", humidity, temperature, heatIndex);
+        WebSocketService::instance->webSocket->broadcastTXT(jsonStr);
+
         
         //Remember the last time measurement
         lastUpdateTime = millis();                  

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <DHTesp.h>
+#include "WebSocketService.h"
 
 
 class HumidityService {

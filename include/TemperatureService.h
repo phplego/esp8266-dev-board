@@ -1,8 +1,10 @@
 #pragma once
 
+#include <ArduinoJson.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include "DubRtttl.h"
+#include "WebSocketService.h"
 
 #define ONE_WIRE_MAX_DEV    15                              // The maximum number of devices
 

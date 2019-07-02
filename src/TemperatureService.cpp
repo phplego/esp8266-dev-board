@@ -72,9 +72,26 @@ void TemperatureService::loop()
         }
         Serial.println();
 
-        
+        const int JSON_SIZE = 300;
+
+
+        // send temperatures as json to web socket
+        StaticJsonBuffer<JSON_SIZE> jsonBuffer;
+        JsonObject& jsonRoot = jsonBuffer.createObject();
+        JsonObject& jsonTemperatures = jsonRoot.createNestedObject("temperatures");
+
+        for (int i = 0; i < DS18B20->getDeviceCount(); i++) {
+            jsonTemperatures[getAddressToString(addresses[i])] = temperatures[i];
+        }
+
+        char jsonStr[JSON_SIZE];
+        jsonRoot.prettyPrintTo(jsonStr, JSON_SIZE);
+        WebSocketService::instance->webSocket->broadcastTXT(jsonStr);        
+
+        // request next measurement
         this->DS18B20->setWaitForConversion(false); //No waiting for measurement
         this->DS18B20->requestTemperatures();       //Initiate the temperature measurement
+        
         lastUpdateTime = millis();                  //Remember the last time measurement
     }
 }

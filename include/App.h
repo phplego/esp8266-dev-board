@@ -5,12 +5,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <WiFiClient.h>
-#include <WebSocketsServer.h>
 #include <WiFiManager.h>
-#include <SSD1306.h>
-#include <Adafruit_MQTT.h>
-#include <Adafruit_MQTT_Client.h>
-#include <ArduinoJson.h>
 #include "DubRtttl.h"
 #include "Routes.h"
 #include "EventService.h"
@@ -18,6 +13,7 @@
 #include "HumidityService.h"
 #include "DisplayService.h"
 #include "MQTTService.h"
+#include "WebSocketService.h"
 #include "utils.h"
 
 #define ONE_WIRE_BUS        D3                              // Pin to which is attached a temperature sensors DS18B20
@@ -37,14 +33,11 @@ class App{
         ESP8266WebServer*   server;
         Routes*             routes;
         
-        // sockets
-        WebSocketsServer*   webSocket;
-        WebSocketsServer*   logSocket;        
-
         TemperatureService* tempService;
         HumidityService*    humService;
         DisplayService*     dispService;
         MQTTService*        mqttService;
+        WebSocketService*   wsService;
         DubRtttl*           rtttl; 
 
         Adafruit_MQTT_Client*  mqtt;
