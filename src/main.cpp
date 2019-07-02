@@ -19,66 +19,12 @@
 
 
 
-// #define ONE_WIRE_MAX_DEV    15                              // The maximum number of devices
-// #define ONE_WIRE_BUS        D3                              // Pin to which is attached a temperature sensors DS18B20
-// #define MELODY_PIN          D2                              // Pin connected to a speaker
-// #define DISPLAY_SDA_PIN     D6                              // Display SDA pin
-// #define DISPLAY_SCL_PIN     D7                              // Display SCL pin
-
-
-//DubRtttl          rtttl(MELODY_PIN);                        // Melody player
-//WiFiManager       wifiManager;                              // WiFi Manager
-//OneWire           oneWire(ONE_WIRE_BUS);                    
-//DallasTemperature DS18B20(&oneWire);                        // Temperature sensor access object    
-//DHTesp            dht;                                      // DHT-11
-
-// int             numberOfDevices;                            // Number of temperature devices found
-// DeviceAddress   devAddr[ONE_WIRE_MAX_DEV];                  // An array device temperature sensors
-// float           tempDev[ONE_WIRE_MAX_DEV];                  // Saving the last measurement of temperature
-// float           theHumidity                     = 0;        // Humidity
-// long            lastTempMeasTime;                           // The last measurement time
-// const int       tempMeasInterval                = 1000;     // The frequency of temperature measurement
-long            lastDispTime;                               // The last display update time
-const int       updateDisplayInterval           = 50;       // The frequency of display refreshing
-
 long            lastMqttPublishTime             = 0;        // The last MQTT publish time
 const long      mqttPublishInterval             = 60*1000;  // MQTT publish interval
 
 const char *    TEMP_ID_MAIN                    = "28ee3577911302da";
 const char *    TEMP_ID_SCND                    = "287c004592160207";
 
-
-
-//------------------------------------------
-// HTTP
-//ESP8266WebServer server(80);
-//Routes routes(&server);
-// WebSocketsServer webSocket(81);
-// WebSocketsServer logSocket(82);
-
-
-
-//------------------------------------------
-// DISPLAY
-//SSD1306  display (0x3c, DISPLAY_SDA_PIN, DISPLAY_SCL_PIN);
-
-
-//------------------------------------------
-// MQTT
-
-// #define MQTT_HOST  "192.168.1.2"    // MQTT host (m21.cloudmqtt.com)
-// #define MQTT_PORT  11883            // MQTT port (18076)   
-// #define MQTT_USER  "mfkrdxtb"       // Ingored if brocker allows guest connection
-// #define MQTT_PASS  "jD-qPTjdtV34"   // Ingored if brocker allows guest connection
-
-// Create an ESP8266 WiFiClient class to connect to the MQTT server.
-// WiFiClient client;
-
-// // Setup the MQTT client class by passing in the WiFi client and MQTT server and login details.
-// Adafruit_MQTT_Client mqtt(&client, MQTT_HOST, MQTT_PORT, MQTT_USER, MQTT_PASS);
-
-// // Publish object
-// Adafruit_MQTT_Publish mqtt_publish = Adafruit_MQTT_Publish(&mqtt, "wifi2mqtt/esp8266_board_1");
 
 
 // Application object
@@ -162,101 +108,17 @@ void getTempStr(char * buffer, const char * sensorAddress){
 // }
 
 
-void displayLoop() {
-    long now = millis();
-    if ( now - lastDispTime > updateDisplayInterval ) {
-        char tempStr[8];
-        char temp2Str[8];
-        char humStr[8];
-        getTempStr(tempStr, TEMP_ID_MAIN);
-        getTempStr(temp2Str, TEMP_ID_SCND);
-        sprintf(humStr, "%.0f", app1.humService->getHumidity());
-
-        app1.display->clear(); // clearing the display
-
-        app1.display->setFont(ArialMT_Plain_16);
-        // first line (yellow)
-        app1.display->drawString(90, 0, String("") + humStr + "%");
-        // second line
-        app1.display->drawString(5, 20, String("t = ") + tempStr + " ºC");
-
-        app1.display->setFont(ArialMT_Plain_10);
-        app1.display->drawString(90, 15, String("") + temp2Str + " ºC");
-        app1.display->drawString(5, 40, String("ip: ") + WiFi.localIP().toString());
-
-        // blinking pixel
-        if (millis() / 200 % 2)
-            app1.display->setPixel(0, 0);
-        app1.display->display();
-        lastDispTime = millis();
-    }
-}
-
-void MQTT_connect() {
-  int8_t ret;
-
-  // Do nothing if already connected.
-  if (app1.mqtt->connected()) {
-    return;
-  }
-
-  Serial.print("Connecting to MQTT... ");
-
-  uint8_t retries = 3;
-  while ((ret = app1.mqtt->connect()) != 0) { // connect will return 0 for connected
-       Serial.println(app1.mqtt->connectErrorString(ret));
-       Serial.println("Retrying MQTT connection in 5 seconds...");
-       app1.mqtt->disconnect();
-       delay(5000);  // wait 5 seconds
-       retries--;
-       if (retries == 0) {
-         return;
-       }
-  }
-  Serial.println("MQTT Connected!");
-}
-
-void mqttLoop() {
-    const int JSON_SIZE = 300;
-    long now = millis();
-    if ( (!lastMqttPublishTime && app1.tempService->temperatures                    [0] > 0) || now - lastMqttPublishTime > mqttPublishInterval ) {
-
-        StaticJsonBuffer<JSON_SIZE> jsonBuffer;
-        JsonObject& root = jsonBuffer.createObject();
-        //JsonArray& others = root.createNestedArray("others");
-        JsonObject& temperatures = root.createNestedObject("temperatures");
-
-
-        temperatures["main"]    = app1.tempService->getTemperatureByAddress(TEMP_ID_MAIN);
-        temperatures["second"]  = app1.tempService->getTemperatureByAddress(TEMP_ID_SCND);
-        root["humidity"] = app1.humService->getHumidity();
-
-        char jsonStr[JSON_SIZE];
-        root.prettyPrintTo(jsonStr, JSON_SIZE);
-
-        MQTT_connect();
-        if (!app1.mqtt_publish->publish(jsonStr)) {
-          Serial.println("MQTT publish failed!");
-        } else {
-          Serial.println("MQTT publish ok!");
-        }
-        
-        lastMqttPublishTime = millis();
-    }
-}
-
-
 
 void onAPStarted(WiFiManager * manager){
-    app1.display->clear();
-    app1.display->setFont(ArialMT_Plain_10);
-    app1.display->setTextAlignment(TEXT_ALIGN_LEFT);
+    app1.dispService->display->clear();
+    app1.dispService->display->setFont(ArialMT_Plain_10);
+    app1.dispService->display->setTextAlignment(TEXT_ALIGN_LEFT);
     int top = 20;
-    app1.display->drawString(0, top + 0, String("Please connect to Wi-Fi"));
-    app1.display->drawString(0, top + 10, String("Network: E-STOVE"));
-    app1.display->drawString(0, top + 20, String("Password: 12341234"));
-    app1.display->drawString(0, top + 30, String("Then go to ip: 10.0.1.1"));
-    app1.display->display();
+    app1.dispService->display->drawString(0, top + 0, String("Please connect to Wi-Fi"));
+    app1.dispService->display->drawString(0, top + 10, String("Network: E-STOVE"));
+    app1.dispService->display->drawString(0, top + 20, String("Password: 12341234"));
+    app1.dispService->display->drawString(0, top + 30, String("Then go to ip: 10.0.1.1"));
+    app1.dispService->display->display();
 }
 
 
@@ -283,17 +145,17 @@ void setup() {
 
 
     // Setup display
-    app1.display->init();
-    app1.display->flipScreenVertically();
-    app1.display->clear();
-    app1.display->setFont(ArialMT_Plain_16);
+    app1.dispService->display->init();
+    app1.dispService->display->flipScreenVertically();
+    app1.dispService->display->clear();
+    app1.dispService->display->setFont(ArialMT_Plain_16);
 
 
     // Setup WIFI
-    app1.display->drawString(20,20, "Hello Oleg!");
-    app1.display->setFont(ArialMT_Plain_10);
-    app1.display->drawString(20,50, "connecting to wifi..");
-    app1.display->display();
+    app1.dispService->display->drawString(20,20, "Hello Oleg!");
+    app1.dispService->display->setFont(ArialMT_Plain_10);
+    app1.dispService->display->drawString(20,50, "connecting to wifi..");
+    app1.dispService->display->display();
     app1.wifiManager->setAPCallback(onAPStarted);
     app1.wifiManager->setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
     app1.wifiManager->autoConnect("E-STOVE", "12341234"); // Blocks execution. Waits until connected
@@ -386,15 +248,8 @@ void setup() {
 
 
 
-void loop() {
-    long t = millis();
-
-    app1.server->handleClient();
-    app1.webSocket->loop();
-    app1.logSocket->loop();
-    app1.tempService->loop();
-    app1.humService->loop();
-    displayLoop();
-    mqttLoop();
-    app1.rtttl->updateMelody();
+void loop() 
+{
+    // Main application loop
+    app1.loop();
 }

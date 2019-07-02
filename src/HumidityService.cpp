@@ -1,9 +1,11 @@
 #include "HumidityService.h"
 #include "utils.h"
 
+HumidityService* HumidityService::instance = NULL;
+
 HumidityService::HumidityService()
 {
-
+    instance = this;
 }
 
 void HumidityService::init(int _pin)

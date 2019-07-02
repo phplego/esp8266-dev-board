@@ -5,6 +5,9 @@
 
 class HumidityService {
     public:
+        // static instance
+        static HumidityService* instance;
+
         // One wire pin, connected to the sensors
         int                 pin;
         

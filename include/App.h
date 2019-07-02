@@ -10,12 +10,14 @@
 #include <SSD1306.h>
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>
-#include "ArduinoJson.h"
+#include <ArduinoJson.h>
 #include "DubRtttl.h"
 #include "Routes.h"
 #include "EventService.h"
 #include "TemperatureService.h"
 #include "HumidityService.h"
+#include "DisplayService.h"
+#include "MQTTService.h"
 #include "utils.h"
 
 #define ONE_WIRE_BUS        D3                              // Pin to which is attached a temperature sensors DS18B20
@@ -41,7 +43,8 @@ class App{
 
         TemperatureService* tempService;
         HumidityService*    humService;
-        SSD1306*            display;
+        DisplayService*     dispService;
+        MQTTService*        mqttService;
         DubRtttl*           rtttl; 
 
         Adafruit_MQTT_Client*  mqtt;
@@ -51,4 +54,5 @@ class App{
     public:
         App();
         void init();
+        void loop();
 };
