@@ -62,7 +62,7 @@ void MQTTService::loop()
         temperatures["main"]    = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_MAIN);
         temperatures["second"]  = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_SCND);
         root["humidity"] = HumidityService::instance->getHumidity();
-        root["system_free_heap_size"] = system_get_free_heap_size();
+        root["memory"] = system_get_free_heap_size();
 
         char jsonStr[JSON_SIZE];
         root.prettyPrintTo(jsonStr, JSON_SIZE);

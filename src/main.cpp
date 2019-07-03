@@ -24,21 +24,6 @@ void myTone(int freq, int duration)
 
 
 
-
-void onAPStarted(WiFiManager * manager){
-    app1.dispService->display->clear();
-    app1.dispService->display->setFont(ArialMT_Plain_10);
-    app1.dispService->display->setTextAlignment(TEXT_ALIGN_LEFT);
-    int top = 20;
-    app1.dispService->display->drawString(0, top + 0, String("Please connect to Wi-Fi"));
-    app1.dispService->display->drawString(0, top + 10, String("Network: E-STOVE"));
-    app1.dispService->display->drawString(0, top + 20, String("Password: 12341234"));
-    app1.dispService->display->drawString(0, top + 30, String("Then go to ip: 10.0.1.1"));
-    app1.dispService->display->display();
-}
-
-
-
 //------------------------------------------
 void setup() {
 
@@ -53,13 +38,6 @@ void setup() {
     myTone(300, 100);
 
 
-    // Setup Serial port speed
-    Serial.begin(115200);
-
-    // Setup FileSystem
-    SPIFFS.begin();
-
-
     // Setup display
     app1.dispService->display->init();
     app1.dispService->display->flipScreenVertically();
@@ -72,9 +50,22 @@ void setup() {
     app1.dispService->display->setFont(ArialMT_Plain_10);
     app1.dispService->display->drawString(20,50, "connecting to wifi..");
     app1.dispService->display->display();
-    app1.wifiManager->setAPCallback(onAPStarted);
+    
+    // On Access Point started (not called if wifi is configured)
+    app1.wifiManager->setAPCallback([](WiFiManager*){
+        app1.dispService->display->clear();
+        app1.dispService->display->setFont(ArialMT_Plain_10);
+        app1.dispService->display->setTextAlignment(TEXT_ALIGN_LEFT);
+        int top = 20;
+        app1.dispService->display->drawString(0, top + 0, String("Please connect to Wi-Fi"));
+        app1.dispService->display->drawString(0, top + 10, String("Network: E-STOVE"));
+        app1.dispService->display->drawString(0, top + 20, String("Password: 12341234"));
+        app1.dispService->display->drawString(0, top + 30, String("Then go to ip: 10.0.1.1"));
+        app1.dispService->display->display();
+    });
+
     app1.wifiManager->setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
-    app1.wifiManager->autoConnect("E-STOVE", "12341234"); // Blocks execution. Waits until connected
+    app1.wifiManager->autoConnect("E-STOVE", "12341234"); // IMPORTANT! Blocks execution. Waits until connected
 
     // Wait for WIFI connection
     while (WiFi.status() != WL_CONNECTED) {

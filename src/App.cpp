@@ -19,6 +19,12 @@ void App::init()
     rtttl       = new DubRtttl(BUZZER_PIN);
     routes      = new Routes(server, rtttl);
 
+    // Setup Serial port speed
+    Serial.begin(115200);
+
+    // Setup FileSystem
+    SPIFFS.begin();
+
     // Setup Temperature Service
     tempService->init(ONE_WIRE_BUS, rtttl);
 
@@ -47,7 +53,6 @@ void App::init()
 void App::loop()
 {
     server->handleClient();
-
     tempService->loop();
     humService->loop();
     dispService->loop();

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SSD1306.h>
-#include <ESP8266WiFi.h>
 
 #include "TemperatureService.h"
 #include "HumidityService.h"

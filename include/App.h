@@ -2,9 +2,7 @@
 
 #include <Arduino.h>
 #include <FS.h>
-#include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <WiFiClient.h>
 #include <WiFiManager.h>
 #include "DubRtttl.h"
 #include "Routes.h"
@@ -14,7 +12,6 @@
 #include "DisplayService.h"
 #include "MQTTService.h"
 #include "WebSocketService.h"
-#include "utils.h"
 
 #define ONE_WIRE_BUS        D3                              // Pin to which is attached a temperature sensors DS18B20
 #define BUZZER_PIN          D2                              // Pin connected to a speaker
