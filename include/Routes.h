@@ -18,6 +18,7 @@ class Routes {
     public:
         // Default Constructor 
         Routes(WiFiManager*, ESP8266WebServer*, DubRtttl*); 
+        void init();
 
     private:
         bool handleFileRead(String path);

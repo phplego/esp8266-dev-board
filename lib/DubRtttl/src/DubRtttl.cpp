@@ -17,7 +17,6 @@ String playingSong;
 
 DubRtttl::DubRtttl(int buzzerPin) {
     _buzzerPin = buzzerPin;
-    Serial.begin(9600);
     pinMode(buzzerPin, OUTPUT);
 }
 

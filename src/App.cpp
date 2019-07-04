@@ -3,12 +3,6 @@
 
 App::App()
 {
-
-}
-
-
-void App::init()
-{
     wifiManager = new WiFiManager();
     server      = new ESP8266WebServer(80);
     tempService = new TemperatureService();
@@ -18,7 +12,11 @@ void App::init()
     wsService   = new WebSocketService();
     rtttl       = new DubRtttl(BUZZER_PIN);
     routes      = new Routes(wifiManager, server, rtttl);
+}
 
+
+void App::init()
+{
     // Setup Serial port speed
     Serial.begin(115200);
 
@@ -39,6 +37,9 @@ void App::init()
 
     // Setup WebSockets Service
     wsService->init();
+
+    // Setup web routes 
+    routes->init();
 
     
     // On Access Point started (not called if wifi is configured)

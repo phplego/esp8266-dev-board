@@ -6,7 +6,10 @@ Routes::Routes(WiFiManager* _wifiManager, ESP8266WebServer* _server, DubRtttl* _
     this->wifiManager   = _wifiManager;
     this->server        = _server;
     this->rtttl         = _rtttl;
+}
 
+void Routes::init()
+{
     // Test route
     this->server->on("/hello", [this](){
        server->send(200, "text/html", "hello hello OK");     
@@ -57,7 +60,6 @@ Routes::Routes(WiFiManager* _wifiManager, ESP8266WebServer* _server, DubRtttl* _
 
     this->server->begin();
     Serial.println("HTTP server started at ip " + WiFi.localIP().toString() );
-
 
 }
 
