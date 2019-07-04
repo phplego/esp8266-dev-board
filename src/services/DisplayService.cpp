@@ -1,8 +1,11 @@
 #include "DisplayService.h"
 
+
+DisplayService* DisplayService::instance = NULL;
+
 DisplayService::DisplayService()
 {
-
+    instance = this;
 }
 
 void DisplayService::init(TemperatureService* ts, HumidityService* hs)
@@ -10,6 +13,19 @@ void DisplayService::init(TemperatureService* ts, HumidityService* hs)
     tempService = ts;
     humService  = hs;
     display     = new SSD1306(0x3c, DISPLAY_SDA_PIN, DISPLAY_SCL_PIN);
+
+    // Setup display
+    display->init();
+    display->flipScreenVertically();
+    display->clear();
+    display->setFont(ArialMT_Plain_16);
+
+
+    // Welcome screen
+    display->drawString(20,20, "Hello Oleg!");
+    display->setFont(ArialMT_Plain_10);
+    display->drawString(20,50, "connecting to wifi..");
+    display->display();
 
 }
 

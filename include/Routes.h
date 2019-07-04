@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <WiFiManager.h>
 #include <ESP8266WebServer.h>
 #include <FS.h>
 #include "DubRtttl.h"
@@ -10,12 +11,13 @@
 
 class Routes {
     public:
+        WiFiManager*        wifiManager;
         ESP8266WebServer*   server;
         DubRtttl*           rtttl;
     
     public:
         // Default Constructor 
-        Routes(ESP8266WebServer*, DubRtttl*); 
+        Routes(WiFiManager*, ESP8266WebServer*, DubRtttl*); 
 
     private:
         bool handleFileRead(String path);

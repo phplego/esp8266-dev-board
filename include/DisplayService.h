@@ -12,6 +12,10 @@
 
 class DisplayService {
     public:
+
+        // static instance
+        static DisplayService* instance;
+
         // Update interval
         int                 interval            = 50;     // redraw interval (milliseconds)
         long                lastUpdateTime      = 0;

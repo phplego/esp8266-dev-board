@@ -54,15 +54,18 @@ void MQTTService::loop()
     if ( (!lastUpdateTime && TemperatureService::instance->temperatures[0] > 0) || now - lastUpdateTime > interval ) {
 
         StaticJsonBuffer<JSON_SIZE> jsonBuffer;
-        JsonObject& root = jsonBuffer.createObject();
         //JsonArray& others = root.createNestedArray("others");
+        
+        JsonObject& root = jsonBuffer.createObject();
+        
+        root["humidity"]  = HumidityService::instance->getHumidity();
+        root["memory"]    = system_get_free_heap_size();
+        root["time"]      = now / 1000;
+
         JsonObject& temperatures = root.createNestedObject("temperatures");
-
-
+        
         temperatures["main"]    = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_MAIN);
         temperatures["second"]  = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_SCND);
-        root["humidity"] = HumidityService::instance->getHumidity();
-        root["memory"] = system_get_free_heap_size();
 
         char jsonStr[JSON_SIZE];
         root.prettyPrintTo(jsonStr, JSON_SIZE);

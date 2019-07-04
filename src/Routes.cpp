@@ -1,10 +1,11 @@
 #include "Routes.h"
 
 
-Routes::Routes(ESP8266WebServer* srv, DubRtttl* _rtttl)
+Routes::Routes(WiFiManager* _wifiManager, ESP8266WebServer* _server, DubRtttl* _rtttl)
 {
-    this->server    = srv;
-    this->rtttl     = _rtttl;
+    this->wifiManager   = _wifiManager;
+    this->server        = _server;
+    this->rtttl         = _rtttl;
 
     // Test route
     this->server->on("/hello", [this](){
@@ -23,9 +24,22 @@ Routes::Routes(ESP8266WebServer* srv, DubRtttl* _rtttl)
             this->server->send(400, "text/html", "'melody' GET parameter is required");
     });
 
+    // Logout
+    this->server->on("/logout", [this](){
+        if(this->server->method() == HTTP_POST){
+            this->server->send(200, "text/html", "OK");
+            this->wifiManager->resetSettings();
+        }
+        else{
+            this->server->send(400, "text/html", "post method only");
+        }
+    });
 
+    // Trying to read file (if route not found)
     this->server->onNotFound( [this](){
-        if(!this->handleFileRead(this->server->uri())){                          // check if the file exists in the flash memory (SPIFFS), if so, send it
+        // check if the file exists in the flash memory (SPIFFS), if so, send it
+        if(!this->handleFileRead(this->server->uri())){                         
+            // Otherwise send 404 error 
             String message = "File Not Found\n\n";
             message += "URI: ";
             message += this->server->uri();
@@ -40,6 +54,10 @@ Routes::Routes(ESP8266WebServer* srv, DubRtttl* _rtttl)
             this->server->send(404, "text/html", message);
         }
     } );
+
+    this->server->begin();
+    Serial.println("HTTP server started at ip " + WiFi.localIP().toString() );
+
 
 }
 
