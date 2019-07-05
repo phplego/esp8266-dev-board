@@ -14,7 +14,7 @@ void HumidityService::init(int _pin)
 
     // Setup DHT-11 humidity sensor
     dht = new DHTesp();
-    dht->setup(pin, DHTesp::DHT11); // Connect DHT sensor to GPIO 4 
+    dht->setup(pin, DHTesp::DHT11); // Connect DHT sensor to given PIN 
 
 }
 
