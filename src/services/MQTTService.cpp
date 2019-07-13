@@ -30,12 +30,12 @@ void MQTTService::connect() {
 
   Serial.print("Connecting to MQTT... ");
 
-  uint8_t retries = 3;
+  uint8_t retries = 10;
   while ((ret = this->mqtt->connect()) != 0) { // connect will return 0 for connected
        Serial.println(this->mqtt->connectErrorString(ret));
        Serial.println("Retrying MQTT connection in 5 seconds...");
        this->mqtt->disconnect();
-       delay(5000);  // wait 5 seconds
+       delay(3000);  // wait 3 seconds
        retries--;
        if (retries == 0) {
          return;

@@ -18,10 +18,6 @@
 #define DISPLAY_SDA_PIN     D6                              // Display SDA pin
 #define DISPLAY_SCL_PIN     D7                              // Display SCL pin
 
-#define MQTT_HOST  "192.168.1.2"    // MQTT host (m21.cloudmqtt.com)
-#define MQTT_PORT  11883            // MQTT port (18076)   
-#define MQTT_USER  "mfkrdxtb"       // Ingored if brocker allows guest connection
-#define MQTT_PASS  "jD-qPTjdtV34"   // Ingored if brocker allows guest connection
 
 class App{
 

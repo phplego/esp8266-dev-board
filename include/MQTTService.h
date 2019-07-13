@@ -9,7 +9,7 @@
 #include "HumidityService.h"
 
 
-#define MQTT_HOST  "192.168.1.2"    // MQTT host (m21.cloudmqtt.com)
+#define MQTT_HOST  "192.168.1.157"  // MQTT host (m21.cloudmqtt.com)
 #define MQTT_PORT  11883            // MQTT port (18076)   
 #define MQTT_USER  "mfkrdxtb"       // Ingored if brocker allows guest connection
 #define MQTT_PASS  "jD-qPTjdtV34"   // Ingored if brocker allows guest connection
