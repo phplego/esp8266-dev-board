@@ -3,15 +3,16 @@
 
 App::App()
 {
-    wifiManager = new WiFiManager();
-    server      = new ESP8266WebServer(80);
-    tempService = new TemperatureService();
-    humService  = new HumidityService();
-    dispService = new DisplayService();
-    mqttService = new MQTTService();
-    wsService   = new WebSocketService();
-    rtttl       = new DubRtttl(BUZZER_PIN);
-    routes      = new Routes(wifiManager, server, rtttl);
+    wifiManager     = new WiFiManager();
+    server          = new ESP8266WebServer(80);
+    tempService     = new TemperatureService();
+    humService      = new HumidityService();
+    dispService     = new DisplayService();
+    mqttService     = new MQTTService();
+    wsService       = new WebSocketService();
+    rtttl           = new DubRtttl(BUZZER_PIN);
+    routes          = new Routes(wifiManager, server, rtttl);
+    changesDetector = new ChangesDetector<5>();
 }
 
 
@@ -69,6 +70,17 @@ void App::init()
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
 
+    changesDetector->setGetValuesCallback([](float* buf){
+        buf[0] = TemperatureService::instance->getTemperature(0);
+        buf[1] = TemperatureService::instance->getTemperature(1);
+        buf[2] = TemperatureService::instance->getTemperature(2);
+        buf[3] = HumidityService::instance->getHumidity();
+    });
+
+    changesDetector->setChangesDetectedCallback([](){
+        MQTTService::instance->publishState();
+    });
+
 
     // TEST EVENTS (remove then)
     EventService es;
@@ -88,4 +100,5 @@ void App::loop()
     mqttService->loop();
     wsService->loop();
     rtttl->updateMelody();
+    changesDetector->loop();
 }

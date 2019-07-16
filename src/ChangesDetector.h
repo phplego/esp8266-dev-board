@@ -6,7 +6,7 @@ typedef void (*GetValuesCallbackType)(float *);
 
 template <int SZ>
 class ChangesDetector {
-    const float THRESHOLD = 0.2;
+    const float THRESHOLD = 0.3;
 
     private:
         float                           values [SZ]                 = {0};    // Remembered values
@@ -55,6 +55,7 @@ void ChangesDetector<SZ>::loop()
     // check each value if changed enough
     for(int i = 0; i < SZ; i++){
         if(std::abs(buf[i] - this->values[i]) >= THRESHOLD){
+            Serial.println(String(buf[i]) + String(" - ") + String(this->values[i]) + String(" = ") + String(buf[i] - this->values[i]) );
             detected = true;
         }
     }

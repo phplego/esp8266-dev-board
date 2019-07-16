@@ -16,7 +16,11 @@
 
 
 class MQTTService {
+
     public:
+        // static instance
+        static MQTTService* instance;
+        
         // Interval in milliseconds of the data publishing
         int                     interval            = 60*1000;     // MQTT publish interval
         long                    lastUpdateTime      = 0;

@@ -1,9 +1,11 @@
 #include "MQTTService.h"
 
+MQTTService* MQTTService::instance = NULL;
+
 
 MQTTService::MQTTService()
 {
-
+    instance = this;
 }
 
 void MQTTService::init()

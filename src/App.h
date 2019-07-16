@@ -34,6 +34,7 @@ class App{
         MQTTService*        mqttService;
         WebSocketService*   wsService;
         DubRtttl*           rtttl; 
+        ChangesDetector<5>* changesDetector;
 
         Adafruit_MQTT_Client*  mqtt;
         Adafruit_MQTT_Publish* mqtt_publish;
