@@ -11,10 +11,8 @@
 
 
 class TemperatureService {
-    public:
-        static TemperatureService* instance;
-        static const char *    ADDRESS_MAIN;
-        static const char *    ADDRESS_SCND;
+
+    private:
 
         // One wire pin, connected to the sensors
         int                 pin;
@@ -26,9 +24,14 @@ class TemperatureService {
         // Array of device addresses
         DeviceAddress       addresses[ONE_WIRE_MAX_DEV];     // An array device temperature sensors
 
-        // Array of measured values
-        float               temperatures[ONE_WIRE_MAX_DEV]; // Saving the last measurement of temperature
+    public:
+        static TemperatureService* instance;
+        static const char *    ADDRESS_MAIN;
+        static const char *    ADDRESS_SCND;
+
         
+        // Is the first measurement done
+        bool                ready               = false;    
 
 
         OneWire*            oneWire;

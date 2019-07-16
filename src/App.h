@@ -12,6 +12,8 @@
 #include "DisplayService.h"
 #include "MQTTService.h"
 #include "WebSocketService.h"
+#include "Queue.h"
+#include "ChangesDetector.h"
 
 #define ONE_WIRE_BUS        D3                              // Pin to which is attached a temperature sensors DS18B20
 #define BUZZER_PIN          D2                              // Pin connected to a speaker

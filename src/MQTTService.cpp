@@ -44,41 +44,51 @@ void MQTTService::connect() {
   Serial.println("MQTT Connected!");
 }
 
+void MQTTService::publishState()
+{
+    const int JSON_SIZE = 300;
+
+    StaticJsonBuffer<JSON_SIZE> jsonBuffer;
+    //JsonArray& others = root.createNestedArray("others");
+    
+    JsonObject& root = jsonBuffer.createObject();
+    
+    root["humidity"]  = HumidityService::instance->getHumidity();
+    root["memory"]    = system_get_free_heap_size();
+    root["uptime"]    = millis() / 1000;
+
+    JsonObject& temperatures = root.createNestedObject("temperatures");
+    
+    temperatures["main"]    = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_MAIN);
+    temperatures["second"]  = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_SCND);
+
+    char jsonStr[JSON_SIZE];
+    root.printTo(jsonStr, JSON_SIZE);
+
+    // It's important to connect before publish!
+    this->connect();
+
+    if (!this->mqtt_publish->publish(jsonStr)) {
+        Serial.println("MQTT publish failed!");
+    } else {
+        Serial.println("MQTT publish ok!");
+    }
+    
+    lastUpdateTime = millis();
+    
+}
+
 
 
 void MQTTService::loop()
 {
-    const int JSON_SIZE = 300;
     long now = millis();
-    
-    if ( (!lastUpdateTime && TemperatureService::instance->temperatures[0] > 0) || now - lastUpdateTime > interval ) {
 
-        StaticJsonBuffer<JSON_SIZE> jsonBuffer;
-        //JsonArray& others = root.createNestedArray("others");
-        
-        JsonObject& root = jsonBuffer.createObject();
-        
-        root["humidity"]  = HumidityService::instance->getHumidity();
-        root["memory"]    = system_get_free_heap_size();
-        root["time"]      = now / 1000;
-
-        JsonObject& temperatures = root.createNestedObject("temperatures");
-        
-        temperatures["main"]    = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_MAIN);
-        temperatures["second"]  = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_SCND);
-
-        char jsonStr[JSON_SIZE];
-        root.prettyPrintTo(jsonStr, JSON_SIZE);
-
-        // It's important to connect before publish!
-        this->connect();
-
-        if (!this->mqtt_publish->publish(jsonStr)) {
-          Serial.println("MQTT publish failed!");
-        } else {
-          Serial.println("MQTT publish ok!");
+    if(TemperatureService::instance->ready)
+    {
+        if ( !lastUpdateTime  || now - lastUpdateTime > interval ) 
+        {
+            this->publishState();
         }
-        
-        lastUpdateTime = millis();
     }
 }

@@ -25,6 +25,11 @@ void TemperatureService::init(int _pin, DubRtttl* _rtttl)
         // save device's address
         DS18B20->getAddress(addresses[i], i);
     }
+
+    this->DS18B20->setWaitForConversion(true);  // Wait for measurement
+    this->DS18B20->requestTemperatures();       // Initiate the temperature measurement
+    this->ready = true;
+
 }
 
 
@@ -35,7 +40,8 @@ float TemperatureService::getTemperature(int deviceIndex)
         return 0.0;
     }
 
-    return temperatures[deviceIndex];
+    return  this->DS18B20->getTempC( addresses[deviceIndex] );
+
 }
 
 
@@ -64,11 +70,11 @@ void TemperatureService::loop()
         return;
     }
 
-    if ( now - lastUpdateTime > interval ) { // Take a measurement at a fixed time (tempMeasInterval = 1000ms, 1s)
+    if (!lastUpdateTime || now - lastUpdateTime > interval ) { // Take a measurement at a fixed time (tempMeasInterval = 1000ms, 1s)
 
-        for (int i = 0; i < DS18B20->getDeviceCount(); i++) {
-            temperatures[i] = this->DS18B20->getTempC( addresses[i] ); // Measuring temperature in Celsius and save the measured value to the array
-            Serial.print(String() +  i + ") " + getAddressToString(addresses[i]) + " = " + temperatures[i] + " ºC \t");
+        for (int i = 0; i < DS18B20->getDeviceCount(); i++) 
+        {
+            Serial.print(String() +  i + ") " + getAddressToString(addresses[i]) + " = " + getTemperature(i) + " ºC \t");
         }
         Serial.println();
 
@@ -81,11 +87,11 @@ void TemperatureService::loop()
         JsonObject& jsonTemperatures = jsonRoot.createNestedObject("temperatures");
 
         for (int i = 0; i < DS18B20->getDeviceCount(); i++) {
-            jsonTemperatures[getAddressToString(addresses[i])] = temperatures[i];
+            jsonTemperatures[getAddressToString(addresses[i])] = getTemperature(i);
         }
 
         char jsonStr[JSON_SIZE];
-        jsonRoot.prettyPrintTo(jsonStr, JSON_SIZE);
+        jsonRoot.printTo(jsonStr, JSON_SIZE);
         WebSocketService::instance->webSocket->broadcastTXT(jsonStr);        
 
         // request next measurement

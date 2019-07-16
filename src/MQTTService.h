@@ -29,9 +29,7 @@ class MQTTService {
         MQTTService();
         void    init();
         void    connect();
+        void    publishState();
         void    loop();
 };
-
-
-
 
