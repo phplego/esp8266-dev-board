@@ -6,7 +6,7 @@ typedef void (*GetValuesCallbackType)(float *);
 
 template <int SZ>
 class ChangesDetector {
-    const float THRESHOLD = 0.3;
+    const float THRESHOLD = 0.5;
 
     private:
         float                           values [SZ]                 = {0};    // Remembered values

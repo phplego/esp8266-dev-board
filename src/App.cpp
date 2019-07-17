@@ -71,10 +71,10 @@ void App::init()
     Serial.println(WiFi.localIP());
 
     changesDetector->setGetValuesCallback([](float* buf){
-        buf[0] = TemperatureService::instance->getTemperature(0);
-        buf[1] = TemperatureService::instance->getTemperature(1);
-        buf[2] = TemperatureService::instance->getTemperature(2);
-        buf[3] = HumidityService::instance->getHumidity();
+        buf[0] = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_MAIN);
+        buf[1] = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_SCND);
+        //buf[2] = TemperatureService::instance->getTemperature(2);
+        //buf[3] = HumidityService::instance->getHumidity();
     });
 
     changesDetector->setChangesDetectedCallback([](){
