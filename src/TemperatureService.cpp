@@ -1,7 +1,7 @@
 #include "TemperatureService.h"
 #include "utils.h"
 
-const char *    TemperatureService::ADDRESS_MAIN            = "28ee3577911302da";
+const char *    TemperatureService::ADDRESS_MAIN            = "282522459205027d";
 const char *    TemperatureService::ADDRESS_SCND            = "287c004592160207";
 
 TemperatureService* TemperatureService::instance = NULL;
@@ -35,13 +35,13 @@ void TemperatureService::init(int _pin, DubRtttl* _rtttl)
 
 float TemperatureService::getTemperature(int deviceIndex)
 {
-    if(deviceIndex >= this->DS18B20->getDeviceCount() || deviceIndex < 0)
-    {
-        return 0.0;
-    }
+    // if(deviceIndex >= this->DS18B20->getDeviceCount() || deviceIndex < 0)
+    // {
+    //     return 0.0;
+    // }
 
-    return  this->DS18B20->getTempC( addresses[deviceIndex] );
-
+    // return  this->DS18B20->getTempC( addresses[deviceIndex] );
+    return  this->DS18B20->getTempCByIndex( deviceIndex );
 }
 
 
@@ -58,7 +58,7 @@ int TemperatureService::getDeviceIndex(const char * sensorAddress)
             return i;
         }
     }
-    return 0;
+    return -1;
 }
 
 void TemperatureService::loop()

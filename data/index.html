@@ -46,10 +46,15 @@
                 try{
                     let data = JSON.parse(e.data);
                     if(data.temperatures) {
-                        const mainTempAddress = '28ee3577911302da';
-                        if(data.temperatures[mainTempAddress]){
-                            document.getElementById('temp').innerHTML = data.temperatures[mainTempAddress].toFixed(1) + " °C";
-                        }
+                        //const mainTempAddress = '28ee3577911302da';
+                        // if(data.temperatures[mainTempAddress]){
+                        //     document.getElementById('temp').innerHTML = data.temperatures[mainTempAddress].toFixed(1) + " °C";
+                        // }
+                        
+                        // first value is main
+                        document.getElementById('temp').innerHTML = Object.values(data.temperatures)[0].toFixed(1) + " °C";
+                        
+                        // all temperatures
                         document.getElementById('all_temps').innerHTML = Object.values(data.temperatures).map(
                             t => t.toFixed(1) + " °C"
                         ).join(" ");

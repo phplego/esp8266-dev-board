@@ -16,7 +16,7 @@ String getContentType(String filename) { // determine the filetype of a given fi
 String getAddressToString(DeviceAddress deviceAddress) {
     String str = "";
     for (uint8_t i = 0; i < 8; i++) {
-        if ( deviceAddress[i] < 16 ) str += String(0, HEX);
+        if ( deviceAddress[i] < 16 ) str += "0";
         str += String(deviceAddress[i], HEX);
     }
     return str;
