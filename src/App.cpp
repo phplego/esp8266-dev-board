@@ -24,14 +24,47 @@ void App::init()
     // Setup FileSystem
     SPIFFS.begin();
 
+    // Setup Display Serivce
+    dispService->init(tempService, humService);
+
+    String deviceName = "espDevBrd";
+    WiFi.hostname(deviceName);
+
+    // On Access Point started (not called if wifi is configured)
+    this->wifiManager->setAPCallback([](WiFiManager* mgr){
+        DisplayService::instance->display->clear();
+        DisplayService::instance->display->setFont(ArialMT_Plain_10);
+        DisplayService::instance->display->setTextAlignment(TEXT_ALIGN_LEFT);
+        int top = 20;
+        DisplayService::instance->display->drawString(0, top + 0, String("Please connect to Wi-Fi"));
+        DisplayService::instance->display->drawString(0, top + 10, String("Network: ") + mgr->getConfigPortalSSID());
+        DisplayService::instance->display->drawString(0, top + 20, String("Password: 12341234"));
+        DisplayService::instance->display->drawString(0, top + 30, String("Then go to ip: 10.0.1.1"));
+        DisplayService::instance->display->display();
+    });
+
+    this->wifiManager->setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
+    this->wifiManager->autoConnect(deviceName.c_str(), "12341234"); // IMPORTANT! Blocks execution. Waits until connected
+
+    // Wait for WIFI connection
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(10);
+        Serial.print(".");
+    }
+
+
+    Serial.print("\nConnected to ");
+    Serial.println(WiFi.SSID());
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+
+
     // Setup Temperature Service
     tempService->init(ONE_WIRE_BUS, rtttl);
 
     // Setup Humidity Service
     humService->init(D4);
 
-    // Setup Display Serivce
-    dispService->init(tempService, humService);
 
     // Setup MQTT Service
     mqttService->init();
@@ -43,32 +76,7 @@ void App::init()
     routes->init();
 
     
-    // On Access Point started (not called if wifi is configured)
-    this->wifiManager->setAPCallback([](WiFiManager*){
-        DisplayService::instance->display->clear();
-        DisplayService::instance->display->setFont(ArialMT_Plain_10);
-        DisplayService::instance->display->setTextAlignment(TEXT_ALIGN_LEFT);
-        int top = 20;
-        DisplayService::instance->display->drawString(0, top + 0, String("Please connect to Wi-Fi"));
-        DisplayService::instance->display->drawString(0, top + 10, String("Network: E-STOVE"));
-        DisplayService::instance->display->drawString(0, top + 20, String("Password: 12341234"));
-        DisplayService::instance->display->drawString(0, top + 30, String("Then go to ip: 10.0.1.1"));
-        DisplayService::instance->display->display();
-    });
 
-    this->wifiManager->setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
-    this->wifiManager->autoConnect("E-STOVE", "12341234"); // IMPORTANT! Blocks execution. Waits until connected
-
-    // Wait for WIFI connection
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(10);
-        Serial.print(".");
-    }
-
-    Serial.print("\nConnected to ");
-    Serial.println(WiFi.SSID());
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
 
     changesDetector->setGetValuesCallback([](float* buf){
         buf[0] = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_MAIN);

@@ -10,6 +10,22 @@ Routes::Routes(WiFiManager* _wifiManager, ESP8266WebServer* _server, DubRtttl* _
 
 void Routes::init()
 {
+    this->server->on("/info", [this](){
+        String str = "<pre>"; 
+        str += String() + "           Uptime: " + (millis() / 1000) + " \n";
+        str += String() + "      FullVersion: " + ESP.getFullVersion() + " \n";
+        str += String() + "      ESP Chip ID: " + ESP.getChipId() + " \n";
+        str += String() + "       CpuFreqMHz: " + ESP.getCpuFreqMHz() + " \n";
+        str += String() + "              VCC: " + ESP.getVcc() + " \n";
+        str += String() + "         FreeHeap: " + ESP.getFreeHeap() + " \n";
+        str += String() + "       SketchSize: " + ESP.getSketchSize() + " \n";
+        str += String() + "  FreeSketchSpace: " + ESP.getFreeSketchSpace() + " \n";
+        str += String() + "    FlashChipSize: " + ESP.getFlashChipSize() + " \n";
+        str += String() + "FlashChipRealSize: " + ESP.getFlashChipRealSize() + " \n";
+        str += "</pre>";
+        server->send(200, "text/html", str);     
+    });
+
     // Test route
     this->server->on("/hello", [this](){
        server->send(200, "text/html", "hello hello OK");     
