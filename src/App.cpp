@@ -44,12 +44,13 @@ void App::init()
     });
 
     this->wifiManager->setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
+    this->wifiManager->setConfigPortalTimeout(60);
     this->wifiManager->autoConnect(deviceName.c_str(), "12341234"); // IMPORTANT! Blocks execution. Waits until connected
 
-    // Wait for WIFI connection
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(10);
-        Serial.print(".");
+    // Restart if not connected
+    if (WiFi.status() != WL_CONNECTED) 
+    {
+        ESP.restart();
     }
 
 
