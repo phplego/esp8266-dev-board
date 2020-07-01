@@ -24,6 +24,10 @@ class TemperatureService {
         // Array of device addresses
         DeviceAddress       addresses[ONE_WIRE_MAX_DEV];     // An array device temperature sensors
 
+        // Array of cached temperatures 
+        float               temperatures[ONE_WIRE_MAX_DEV] = {0};     
+
+
     public:
         static TemperatureService* instance;
         static const char *    ADDRESS_MAIN;

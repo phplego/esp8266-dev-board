@@ -41,7 +41,8 @@ float TemperatureService::getTemperature(int deviceIndex)
     // }
 
     // return  this->DS18B20->getTempC( addresses[deviceIndex] );
-    return  this->DS18B20->getTempCByIndex( deviceIndex );
+    return temperatures[deviceIndex];
+    //return  this->DS18B20->getTempCByIndex( deviceIndex );
 }
 
 
@@ -74,6 +75,7 @@ void TemperatureService::loop()
 
         for (int i = 0; i < DS18B20->getDeviceCount(); i++) 
         {
+            temperatures[i] = this->DS18B20->getTempCByIndex(i);
             Serial.print(String() +  i + ") " + getAddressToString(addresses[i]) + " = " + getTemperature(i) + " ºC \t");
         }
         Serial.println();
