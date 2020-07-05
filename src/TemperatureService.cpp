@@ -1,7 +1,7 @@
 #include "TemperatureService.h"
 #include "utils.h"
 
-const char *    TemperatureService::ADDRESS_MAIN            = "282522459205027d";
+const char *    TemperatureService::ADDRESS_MAIN            = "282c4445920e0245";
 const char *    TemperatureService::ADDRESS_SCND            = "287c004592160207";
 
 TemperatureService* TemperatureService::instance = NULL;
