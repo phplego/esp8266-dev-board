@@ -37,7 +37,17 @@ void DisplayService::loop()
         char temp2Str[8];
         char humStr[8];
         int yOffset = 0;//10 - ((millis() / 100) % 10);
-        sprintf(tempStr, "%.1f", this->tempService->getTemperatureByAddress(TemperatureService::ADDRESS_MAIN));
+
+        if(this->tempService->getDeviceIndex(TemperatureService::ADDRESS_PROBE) == -1)
+        {
+            // probe not connected, use "main"
+            sprintf(tempStr, "m = %.1f", this->tempService->getTemperatureByAddress(TemperatureService::ADDRESS_MAIN));
+        }
+        else
+        {
+            sprintf(tempStr, "p = %.1f", this->tempService->getTemperatureByAddress(TemperatureService::ADDRESS_PROBE));
+        }
+        
         sprintf(temp2Str, "%.1f", this->tempService->getTemperatureByAddress(TemperatureService::ADDRESS_SCND));
         sprintf(humStr, "%.0f", this->humService->getHumidity());
 
@@ -47,11 +57,11 @@ void DisplayService::loop()
         // first line (yellow)
         this->display->drawString(90, 0, String("") + humStr + "%");
         // second line
-        this->display->drawString(5, yOffset + 20, String("t = ") + tempStr + " ºC");
+        this->display->drawString(5, yOffset + 20, tempStr + String(" ºC"));
 
         this->display->setFont(ArialMT_Plain_10);
         this->display->drawString(90, yOffset + 15, String("") + temp2Str + " ºC");
-        this->display->drawString(5, yOffset + 40, String("ip: ") + WiFi.localIP().toString());
+        this->display->drawString(5, yOffset + 54, String("ip: ") + WiFi.localIP().toString());
 
         // blinking pixel
         if (millis() / 200 % 2)

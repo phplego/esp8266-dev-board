@@ -63,6 +63,7 @@ void MQTTService::publishState()
     
     temperatures["main"]    = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_MAIN);
     temperatures["second"]  = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_SCND);
+    temperatures["probe"]  = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_PROBE);
 
     char jsonStr[JSON_SIZE];
     root.printTo(jsonStr, JSON_SIZE);

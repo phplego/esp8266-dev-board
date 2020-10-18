@@ -32,6 +32,7 @@ class TemperatureService {
         static TemperatureService* instance;
         static const char *    ADDRESS_MAIN;
         static const char *    ADDRESS_SCND;
+        static const char *    ADDRESS_PROBE;
 
         
         // Is the first measurement done

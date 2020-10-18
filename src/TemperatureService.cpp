@@ -3,6 +3,7 @@
 
 const char *    TemperatureService::ADDRESS_MAIN            = "282c4445920e0245";
 const char *    TemperatureService::ADDRESS_SCND            = "287c004592160207";
+const char *    TemperatureService::ADDRESS_PROBE           = "28ee3577911302da";
 
 TemperatureService* TemperatureService::instance = NULL;
 
