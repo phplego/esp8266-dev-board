@@ -30,6 +30,8 @@ void App::init()
     String deviceName = "espDevBrd";
     WiFi.hostname(deviceName);
 
+    wifi_set_sleep_type(NONE_SLEEP_T); // prevent wifi sleep (stronger connection)
+
     // On Access Point started (not called if wifi is configured)
     this->wifiManager->setAPCallback([](WiFiManager* mgr){
         DisplayService::instance->display->clear();
@@ -82,6 +84,7 @@ void App::init()
     changesDetector->setGetValuesCallback([](float* buf){
         buf[0] = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_MAIN);
         buf[1] = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_SCND);
+        buf[2] = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_PROBE);
         //buf[2] = TemperatureService::instance->getTemperature(2);
         //buf[3] = HumidityService::instance->getHumidity();
     });
