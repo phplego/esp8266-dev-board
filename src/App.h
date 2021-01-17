@@ -24,6 +24,9 @@
 class App{
 
     public:
+        // static instance
+        static App* instance;
+
         WiFiManager*        wifiManager;
         ESP8266WebServer*   server;
         Routes*             routes;
@@ -35,9 +38,6 @@ class App{
         WebSocketService*   wsService;
         DubRtttl*           rtttl; 
         ChangesDetector<5>* changesDetector;
-
-        Adafruit_MQTT_Client*  mqtt;
-        Adafruit_MQTT_Publish* mqtt_publish;
 
 
     public:

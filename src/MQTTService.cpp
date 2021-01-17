@@ -16,11 +16,14 @@ void MQTTService::init()
     // Setup the MQTT client class by passing in the WiFi client and MQTT server and login details.
     mqtt            = new Adafruit_MQTT_Client(client, MQTT_HOST, MQTT_PORT, MQTT_USER, MQTT_PASS);
     mqtt_publish    = new Adafruit_MQTT_Publish(mqtt, "wifi2mqtt/esp8266_board_1");
+    
+    mqtt_subscribe  = new Adafruit_MQTT_Subscribe (mqtt, "wifi2mqtt/esp8266_board_1/set");
+
 
 }
 
 /**
- * Conect to MQTT brocker. Do nothing if already connected
+ * Conect to MQTT broker. Do nothing if already connected
  */
 void MQTTService::connect() {
   int8_t ret;
@@ -94,4 +97,6 @@ void MQTTService::loop()
             this->publishState();
         }
     }
+
+    this->mqtt->processPackets(10);
 }

@@ -1,8 +1,11 @@
 #include "App.h"
 
+App* App::instance = NULL;
+
 
 App::App()
 {
+    rtttl           = new DubRtttl(BUZZER_PIN);
     wifiManager     = new WiFiManager();
     server          = new ESP8266WebServer(80);
     tempService     = new TemperatureService();
@@ -10,9 +13,10 @@ App::App()
     dispService     = new DisplayService();
     mqttService     = new MQTTService();
     wsService       = new WebSocketService();
-    rtttl           = new DubRtttl(BUZZER_PIN);
     routes          = new Routes(wifiManager, server, rtttl);
     changesDetector = new ChangesDetector<5>();
+
+    App::instance = this;
 }
 
 
@@ -91,6 +95,52 @@ void App::init()
 
     changesDetector->setChangesDetectedCallback([](){
         MQTTService::instance->publishState();
+    });
+
+
+    // Setup MQTT subscription for the 'set' topic.
+    mqttService->mqtt->subscribe(mqttService->mqtt_subscribe);
+
+    mqttService->mqtt_subscribe->setCallback([](char *str, uint16_t len){
+        Serial.print(String("Got mqtt message len="));
+        Serial.println(len);
+        char buf [len + 1];
+        buf[len] = 0;
+        strncpy(buf, str, len);
+
+        Serial.println(String("Got mqtt message: ") + buf);
+        StaticJsonBuffer<10000> jsonBuffer;
+        // StaticJsonBuffer allocates memory on the stack, it can be
+        // replaced by DynamicJsonBuffer which allocates in the heap.
+
+        // Root of the object tree.
+        //
+        // It's a reference to the JsonObject, the actual bytes are inside the
+        // JsonBuffer with all the other nodes of the object tree.
+        // Memory is freed when jsonBuffer goes out of scope.
+        JsonObject& root = jsonBuffer.parseObject(buf);
+
+        // Test if parsing succeeds.
+        if (!root.success()) {
+            Serial.println("parseObject() failed");
+            return;
+        }
+
+        // Fetch values.
+        //
+        // Most of the time, you can rely on the implicit casts.
+        // In other case, you can do root["time"].as<long>();
+
+        if(root.containsKey("melody")){
+            const char* melody = root["melody"];
+
+            // Print values.
+            Serial.print("Playing melody: ");
+            Serial.println(melody);
+
+            App::instance->rtttl->play(melody);
+        }
+
     });
 
 

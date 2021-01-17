@@ -20,6 +20,7 @@ class MQTTService {
     public:
         // static instance
         static MQTTService* instance;
+
         
         // Interval in milliseconds of the data publishing
         int                     interval            = 60*1000;     // MQTT publish interval
@@ -28,6 +29,7 @@ class MQTTService {
         // MQTT library objects
         Adafruit_MQTT_Client*   mqtt;
         Adafruit_MQTT_Publish*  mqtt_publish;
+        Adafruit_MQTT_Subscribe*  mqtt_subscribe;
 
     public:
         MQTTService();
