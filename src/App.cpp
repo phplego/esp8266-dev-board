@@ -109,30 +109,12 @@ void App::init()
         strncpy(buf, str, len);
 
         Serial.println(String("Got mqtt message: ") + buf);
-        StaticJsonBuffer<10000> jsonBuffer;
-        // StaticJsonBuffer allocates memory on the stack, it can be
-        // replaced by DynamicJsonBuffer which allocates in the heap.
 
-        // Root of the object tree.
-        //
-        // It's a reference to the JsonObject, the actual bytes are inside the
-        // JsonBuffer with all the other nodes of the object tree.
-        // Memory is freed when jsonBuffer goes out of scope.
-        JsonObject& root = jsonBuffer.parseObject(buf);
+        DynamicJsonDocument doc(1024);
+        deserializeJson(doc, buf);
 
-        // Test if parsing succeeds.
-        if (!root.success()) {
-            Serial.println("parseObject() failed");
-            return;
-        }
-
-        // Fetch values.
-        //
-        // Most of the time, you can rely on the implicit casts.
-        // In other case, you can do root["time"].as<long>();
-
-        if(root.containsKey("melody")){
-            const char* melody = root["melody"];
+        if(doc.containsKey("melody")){
+            const char* melody = doc["melody"];
 
             // Print values.
             Serial.print("Playing melody: ");

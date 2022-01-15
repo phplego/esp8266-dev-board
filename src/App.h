@@ -4,6 +4,7 @@
 #include <FS.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
+#include <ArduinoJson.h>
 #include "DubRtttl.h"
 #include "Routes.h"
 #include "EventService.h"

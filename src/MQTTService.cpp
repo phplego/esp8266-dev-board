@@ -53,23 +53,20 @@ void MQTTService::publishState()
 {
     const int JSON_SIZE = 300;
 
-    StaticJsonBuffer<JSON_SIZE> jsonBuffer;
-    //JsonArray& others = root.createNestedArray("others");
+    DynamicJsonDocument doc(JSON_SIZE);
     
-    JsonObject& root = jsonBuffer.createObject();
-    
-    root["humidity"]  = HumidityService::instance->getHumidity();
-    root["memory"]    = system_get_free_heap_size();
-    root["uptime"]    = millis() / 1000;
+    doc["humidity"]  = HumidityService::instance->getHumidity();
+    doc["memory"]    = system_get_free_heap_size();
+    doc["uptime"]    = millis() / 1000;
 
-    JsonObject& temperatures = root.createNestedObject("temperatures");
+    JsonObject temperatures = doc.createNestedObject("temperatures");
     
     temperatures["main"]    = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_MAIN);
     temperatures["second"]  = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_SCND);
     temperatures["probe"]  = TemperatureService::instance->getTemperatureByAddress(TemperatureService::ADDRESS_PROBE);
 
     char jsonStr[JSON_SIZE];
-    root.printTo(jsonStr, JSON_SIZE);
+    serializeJson(doc, jsonStr, JSON_SIZE);
 
     // It's important to connect before publish!
     this->connect();
