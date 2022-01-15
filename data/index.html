@@ -37,9 +37,7 @@
                 const out = document.getElementById('out');
                 const needScroll = out.scrollTop >= out.scrollHeight - out.clientHeight;
                 if(out.innerHTML.length > 20000) out.innerHTML = '';
-                out.innerHTML += "\n\n===============  msg  ===============\n"
-                    + e.data
-                    + "\n=====================================\n";
+                out.innerHTML += e.data + "\n";
                 if(needScroll){
                     out.scrollTop = out.scrollHeight - out.clientHeight;
                 }

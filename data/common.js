@@ -1,6 +1,7 @@
 function insertMenu()
 {
     document.write('Menu: ');
+    document.write('<a href="/info">info</a> ');
     document.write('<a href="index.html">index.html</a> ');
     document.write('<a href="log.html">log.html</a> ');
     document.write('<a href="play.html">play.html</a> ');

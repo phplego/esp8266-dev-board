@@ -20,7 +20,7 @@
             };
             connection.onmessage = function (e) {
                 console.log('Server: ', e.data);
-                document.getElementById('out').innerHTML += e.data;
+                document.getElementById('out').innerHTML += e.data + "\n";
             };
             connection.onclose = function () {
                 console.log('WebSocket connection closed');
@@ -31,7 +31,7 @@
 </head>
 <body>
 <header>
-    <script>insertMenu();</script>>
+    <script>insertMenu();</script>
 </header>
 
 <pre id='out'></pre>
