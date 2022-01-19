@@ -31,10 +31,10 @@ void App::init()
     // Setup Display Serivce
     dispService->init(tempService, humService);
 
-    String deviceName = "espDevBrd";
-    WiFi.hostname(deviceName);
 
     wifi_set_sleep_type(NONE_SLEEP_T); // prevent wifi sleep (stronger connection)
+
+    String deviceName = "espDevBrd";
 
     // On Access Point started (not called if wifi is configured)
     this->wifiManager->setAPCallback([](WiFiManager* mgr){
@@ -58,6 +58,8 @@ void App::init()
     {
         ESP.restart();
     }
+
+    WiFi.hostname(deviceName);
 
 
     Serial.print("\nConnected to ");
